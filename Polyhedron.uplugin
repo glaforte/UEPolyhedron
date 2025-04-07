@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Polyhedron",
+	"Description": "Polyhedron Library",
+	"Category": "Other",
+	"CreatedBy": "Tabby Coder",
+	"CreatedByURL": "http://tabbycoder.com",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Polyhedron",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
