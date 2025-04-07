@@ -69,11 +69,11 @@ public: // Polygon Operations
   static FVector GetPolygonNormal(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon);
 
 public: // Polyhedra Operations
-  FPolyhedronMesh CreateIcosahedron() const;
   FPolyhedronMesh ExecuteDualOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ExecuteKisOperation(const FPolyhedronMesh& Input, int32 SideFilter = 0, double ApexOffset = 0.1) const;
   FPolyhedronMesh ExecuteTruncateOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ScaleToSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
+  FPolyhedronMesh ProjectUntoSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
 
 public: // Polyhedra Extended Operations
   static FPolyhedronExtendedMesh ComputeEdgeDetails(const FPolyhedronMesh& Input);

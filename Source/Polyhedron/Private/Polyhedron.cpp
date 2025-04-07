@@ -3,6 +3,7 @@
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
 #include "Polyhedron.h"
+#include "PolyhedronStarter.h"
 #include "Helpers.h"
 
 FPolyhedronPolygon::FPolyhedronPolygon()
@@ -27,24 +28,40 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
   // tktI -> Golf ball or G(3,3)
 
   // The last letter (and the first to be processed) is the start polyhedron.
+  bool PolyhedronStarted = false;
+  int32 Argument = 0;
   FPolyhedronMesh Polyhedron;
   auto NotationIterator = ConwayPolyhedronNotation.rbegin(), NotationIteratorEnd = ConwayPolyhedronNotation.rend();
-  switch (*NotationIterator) {
-  case 'I': Polyhedron = CreateIcosahedron(); break;
-  default: REPORT_ERROR_RETURN_IF(ConwayPolyhedronNotation.Len() < 1, FPolyhedronMesh(), "Unknown Starter Volume.");
-  }
-  ++NotationIterator;
-
-  // The subsequent letters are Conway operations to be done on the polyhedron.
   for (; NotationIterator != NotationIteratorEnd; ++NotationIterator) {
-    switch (*NotationIterator) {
-    case 'd': Polyhedron = ExecuteDualOperation(Polyhedron); break;
-    case 'k': Polyhedron = ExecuteKisOperation(Polyhedron, 0, 0.1); break;
-    case 't': Polyhedron = ExecuteTruncateOperation(Polyhedron); break;
-    default: REPORT_ERROR_RETURN_IF(ConwayPolyhedronNotation.Len() < 1, FPolyhedronMesh(), "Unknown Operation: %s", *NotationIterator);
+    // Parse any integers as an argument for the subsequent function.
+    if (*NotationIterator >= '0' && *NotationIterator <= '9') {
+      Argument = *NotationIterator - TEXT('0');
+      continue;
     }
-  }
 
+    // Start with a Polyhedron seed.
+    if (!PolyhedronStarted) {
+      switch (*NotationIterator) {
+        case 'I': Polyhedron = FPolyhedronStarter::CreateIcosahedron(); break;
+        case 'D': Polyhedron = FPolyhedronStarter::CreateDodecahedron(); break;
+        case 'P': Polyhedron = FPolyhedronStarter::CreatePrism(Argument); break;
+        default: REPORT_ERROR("Unknown Starter Volume: %c", *NotationIterator); return FPolyhedronMesh();
+      }
+      PolyhedronStarted = true;
+      Argument = 0;
+      continue;
+    }
+
+    // The subsequent letters are Conway operations to be done on the polyhedron.
+    switch (*NotationIterator) {
+      case 'd': Polyhedron = ExecuteDualOperation(Polyhedron); break;
+      case 'k': Polyhedron = ExecuteKisOperation(Polyhedron, 0, 0.1); break;
+      case 't': Polyhedron = ExecuteTruncateOperation(Polyhedron); break;
+      default: REPORT_ERROR("Unknown Polyhedron Operation: %c", *NotationIterator); return FPolyhedronMesh();
+    }
+    Argument = 0;
+  }
+  
   Polyhedron = ScaleToSphere(Polyhedron, Scale);
   return Polyhedron;
 }
@@ -111,49 +128,6 @@ FVector FPolyhedronTools::GetPolygonNormal(const FPolyhedronMesh& Polyhedron, co
     Normal += CalculateNormal(Polyhedron.Vertices[PolygonVertexIndices[0]], Polyhedron.Vertices[PolygonVertexIndices[PolygonVertexIndex - 1]], Polyhedron.Vertices[PolygonVertexIndices[PolygonVertexIndex]]);
   }
   return Normal.GetSafeNormal();
-}
-
-FPolyhedronMesh FPolyhedronTools::CreateIcosahedron() const {
-  // Icosahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
-
-  FPolyhedronMesh Output;
-  Output.Vertices.Reserve(12);
-  Output.Vertices.Add({ 0, 0, 1.176 });
-  Output.Vertices.Add({ 1.051, 0, 0.526 });
-  Output.Vertices.Add({ 0.324, 1.0, 0.525 });
-  Output.Vertices.Add({ -0.851, 0.618, 0.526 });
-  Output.Vertices.Add({ -0.851, -0.618, 0.526 });
-  Output.Vertices.Add({ 0.325, -1.0, 0.526 });
-  Output.Vertices.Add({ 0.851, 0.618, -0.526 });
-  Output.Vertices.Add({ 0.851, -0.618, -0.526 });
-  Output.Vertices.Add({ -0.325, 1.0, -0.526 });
-  Output.Vertices.Add({ -1.051, 0, -0.526 });
-  Output.Vertices.Add({ -0.325, -1.0, -0.526 });
-  Output.Vertices.Add({ 0, 0, -1.176 });
-
-  Output.Polygons.Reserve(20);
-  Output.Polygons.Add({ 0, 2, 1 });
-  Output.Polygons.Add({ 0, 3, 2 });
-  Output.Polygons.Add({ 0, 4, 3 });
-  Output.Polygons.Add({ 0, 5, 4 });
-  Output.Polygons.Add({ 0, 1, 5 });
-  Output.Polygons.Add({ 1, 7, 5 });
-  Output.Polygons.Add({ 1, 6, 7 });
-  Output.Polygons.Add({ 1, 2, 6 });
-  Output.Polygons.Add({ 2, 8, 6 });
-  Output.Polygons.Add({ 2, 3, 8 });
-  Output.Polygons.Add({ 3, 9, 8 });
-  Output.Polygons.Add({ 3, 4, 9 });
-  Output.Polygons.Add({ 4, 10, 9 });
-  Output.Polygons.Add({ 4, 5, 10 });
-  Output.Polygons.Add({ 5, 7, 10 });
-  Output.Polygons.Add({ 6, 11, 7 });
-  Output.Polygons.Add({ 6, 8, 11 });
-  Output.Polygons.Add({ 7, 11, 10 });
-  Output.Polygons.Add({ 8, 9, 11 });
-  Output.Polygons.Add({ 9, 10, 11 });
-
-  return Output;
 }
 
 FPolyhedronMesh FPolyhedronTools::ExecuteDualOperation(const FPolyhedronMesh& Input) const {
@@ -295,23 +269,37 @@ FPolyhedronMesh FPolyhedronTools::ExecuteTruncateOperation(const FPolyhedronMesh
 }
 
 FPolyhedronMesh FPolyhedronTools::ScaleToSphere(const FPolyhedronMesh& Input, double Radius) const {
-  // Compute the bounding sphere of the polyhedron.
+  // Compute the current spherical radius of the polyhedron.
+  // Assume that all Polyhedron have the origin as their center.
+  double FurthestVertexDistanceSquared = 0.0;
+  for (const FVector& VertexPosition : Input.Vertices) {
+    double VertexDistanceSquared = VertexPosition.Dot(VertexPosition);
+    if (VertexDistanceSquared > FurthestVertexDistanceSquared) {
+      FurthestVertexDistanceSquared = VertexDistanceSquared;
+    }
+  }
   FSphere BoundingSphere(Input.Vertices.GetData(), Input.Vertices.Num());
   const FVector& Centroid = BoundingSphere.Center; // should this always be the zero-vector?
-  float ScaleFactor = Radius / BoundingSphere.W;
+  float ScaleFactor = Radius / FMath::Sqrt(FurthestVertexDistanceSquared);
 
   // Rescale the polyhedron.
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(Input.Vertices.Num());
   for (const FVector& InputVertex : Input.Vertices) {
-    FVector VertexOffset = InputVertex - Centroid;
-#ifdef JUST_SCALE
-    FVector OutputVertex = Centroid + (VertexOffset * ScaleFactor);
-#else
+    Output.Vertices.Add(InputVertex * ScaleFactor);
+  }
+
+  Output.Polygons = Input.Polygons;
+  return Output;
+}
+
+FPolyhedronMesh FPolyhedronTools::ProjectUntoSphere(const FPolyhedronMesh& Input, double Radius) const {
+  // Assume that all Polyhedron have the origin as their center.
+  FPolyhedronMesh Output;
+  Output.Vertices.Reserve(Input.Vertices.Num());
+  for (const FVector& InputVertex : Input.Vertices) {
     // Recenter at the origin and place back on the sphere.
-    FVector OutputVertex = VertexOffset.GetSafeNormal() * Radius;
-#endif    
-    Output.Vertices.Add(OutputVertex);
+    Output.Vertices.Add(InputVertex.GetSafeNormal() * Radius);
   }
 
   Output.Polygons = Input.Polygons;

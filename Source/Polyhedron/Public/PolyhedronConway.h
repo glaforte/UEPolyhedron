@@ -38,6 +38,7 @@ private:
 	FPolyhedronMesh Polyhedron;
 
 protected: // Polyhedron Component
+	void CreatePolyhedronComponent();
 	void GeneratePolyhedron();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Polyhedron") TObjectPtr<UPolyhedronComponent> PolyhedronComponent;
 };

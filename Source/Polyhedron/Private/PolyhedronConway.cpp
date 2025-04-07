@@ -19,10 +19,7 @@ void APolyhedronConway::BeginPlay() {
   Super::BeginPlay();
 
   if (PolyhedronComponent == nullptr) {
-    REPORT_ERROR_IF(PolyhedronComponent != nullptr, "BeginPlay called multiple times");
-    PolyhedronComponent = NewObject<UPolyhedronComponent>(this, TEXT("PolyhedronComponent"), RF_Transient);
-    PolyhedronComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-    GeneratePolyhedron();
+    CreatePolyhedronComponent();
   }
 }
 
@@ -30,10 +27,7 @@ void APolyhedronConway::PostLoad() {
   Super::PostLoad();
 
   if (PolyhedronComponent == nullptr) {
-    REPORT_ERROR_IF(PolyhedronComponent != nullptr, "BeginPlay called multiple times");
-    PolyhedronComponent = NewObject<UPolyhedronComponent>(this, TEXT("PolyhedronComponent"), RF_Transient);
-    PolyhedronComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-    GeneratePolyhedron();
+    CreatePolyhedronComponent();
   }
 }
 
@@ -41,13 +35,29 @@ void APolyhedronConway::PostLoad() {
 void APolyhedronConway::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) {
   Super::PostEditChangeProperty(PropertyChangedEvent);
 
+  // Skip any calls before post-load.
+  if (HasAnyFlags(RF_NeedPostLoad)) {
+    return;
+  }
+
   // Regenerate the Polyhedron only if the user changes the local properties.
 	FProperty* Property = PropertyChangedEvent.MemberProperty;
-  if (Property != nullptr && PolyhedronComponent != nullptr && Property->HasMetaData("Recreate")) {
-    GeneratePolyhedron();
+  if (Property != nullptr && Property->HasMetaData("Recreate")) {
+    if (PolyhedronComponent == nullptr) {
+      CreatePolyhedronComponent();
+    } else {
+      GeneratePolyhedron();
+    }
   }
 }
 #endif
+
+void APolyhedronConway::CreatePolyhedronComponent() {
+  REPORT_ERROR_IF(PolyhedronComponent != nullptr, "PolyhedronComponent already exists");
+  PolyhedronComponent = NewObject<UPolyhedronComponent>(this, TEXT("PolyhedronComponent"), RF_Transient);
+  PolyhedronComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+  GeneratePolyhedron();
+}
 
 void APolyhedronConway::GeneratePolyhedron() {
   REPORT_ERROR_IF(PolyhedronComponent == nullptr, "Missing PolyhedronComponent");

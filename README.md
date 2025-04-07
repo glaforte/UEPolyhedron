@@ -17,6 +17,8 @@ This string is parsed from back to front.
 
 The following starter polyhedra are supported:
 * `I` [Icosahedron](https://en.wikipedia.org/wiki/Icosahedron)
+* `D` [Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)
+* `P<n>` [Prism](https://en.wikipedia.org/wiki/Prism_(geometry)) where `<n>` is [3,9]. For example: `P3` makes a [Triangular Prism](https://en.wikipedia.org/wiki/Triangular_prism) and `P5` makes a [Pentagonal Prism](https://en.wikipedia.org/wiki/Pentagonal_prism).
 
 The following operations are supported:
 * `d` Dual
@@ -38,9 +40,8 @@ For more details on Goldberg Polyhedron and its notation: https://en.wikipedia.o
 * `tktktI` is GP(6,6).
 
 ### Inspiration
-Based on the Polyhédronisme project.  Copyright 2019, Anselm Levskaya.
-* https://levskaya.github.io/polyhedronisme/
-* https://github.com/levskaya/polyhedronisme
+Based on the [Polyhédronisme](https://levskaya.github.io/polyhedronisme/) project.
+Copyright 2019, Anselm Levskaya.
+The PolyhedronConway actor notation is intended to match Polyhédronisme's notation. See the [Polyhédronisme User Interface](https://github.com/levskaya/polyhedronisme) for more details.
 
-Based on earlier work from George W. Hart.
-* http://www.georgehart.com/
+Based on earlier work from [George W. Hart](http://www.georgehart.com/).
