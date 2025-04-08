@@ -1,10 +1,10 @@
 // Copyright 2024 TabbyCoder
-// Based on the Polyhédronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
+// Based on the Polyhedronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
 #include "PolyhedronStarter.h"
 
-FPolyhedronMesh FPolyhedronStarter::CreateIcosahedron() {
+FPolyhedronMesh FPolyhedronStarter::Icosahedron() {
   // Icosahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
 
   FPolyhedronMesh Output;
@@ -47,7 +47,7 @@ FPolyhedronMesh FPolyhedronStarter::CreateIcosahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreateOctahedron() {
+FPolyhedronMesh FPolyhedronStarter::Octahedron() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(6);
   Output.Vertices.Add({ 0, 0, 1.414 });
@@ -69,7 +69,7 @@ FPolyhedronMesh FPolyhedronStarter::CreateOctahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreateDodecahedron() {
+FPolyhedronMesh FPolyhedronStarter::Dodecahedron() {
   // Dodecahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
 
   FPolyhedronMesh Output;
@@ -112,9 +112,9 @@ FPolyhedronMesh FPolyhedronStarter::CreateDodecahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreatePrism(int32 Sides) {
+FPolyhedronMesh FPolyhedronStarter::Prism(int32 Sides) {
   if (Sides < 3) { 
-    REPORT_ERROR("Cannot create a prism with a degree < 3");
+    REPORT_ERROR("Cannot  a prism with a degree < 3");
     return FPolyhedronMesh();
   }
 
@@ -146,7 +146,7 @@ FPolyhedronMesh FPolyhedronStarter::CreatePrism(int32 Sides) {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreateTetrahedron() {
+FPolyhedronMesh FPolyhedronStarter::Tetrahedron() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(4);
   Output.Vertices.Add({ 1.0, 1.0, 1.0 });
@@ -163,7 +163,7 @@ FPolyhedronMesh FPolyhedronStarter::CreateTetrahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreateCube() {
+FPolyhedronMesh FPolyhedronStarter::Cube() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(8);
   Output.Vertices.Add({ 0.707, 0.707, 0.707 });

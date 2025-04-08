@@ -16,11 +16,11 @@ struct POLYHEDRON_API FPolyhedronStarter {
   GENERATED_BODY()
 
 public: // Polyhedron Creation Functions
-  static FPolyhedronMesh CreateIcosahedron();
-  static FPolyhedronMesh CreateDodecahedron();
-  static FPolyhedronMesh CreateOctahedron();
-  static FPolyhedronMesh CreatePrism(int32 Sides);
-  static FPolyhedronMesh CreateTetrahedron();
-  static FPolyhedronMesh CreateCube();
+  static FPolyhedronMesh Icosahedron();
+  static FPolyhedronMesh Dodecahedron();
+  static FPolyhedronMesh Octahedron();
+  static FPolyhedronMesh Prism(int32 Sides);
+  static FPolyhedronMesh Tetrahedron();
+  static FPolyhedronMesh Cube();
 };
 
