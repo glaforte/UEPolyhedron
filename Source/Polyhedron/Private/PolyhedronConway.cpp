@@ -13,22 +13,25 @@ APolyhedronConway::APolyhedronConway()
 
   // Create the PolyhedronComponent
   RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("PlacementComponent"));
+  PolyhedronComponent = CreateDefaultSubobject<UPolyhedronComponent>(TEXT("PolyhedronComponent"), true);
+  PolyhedronComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void APolyhedronConway::BeginPlay() {
   Super::BeginPlay();
 
-  if (PolyhedronComponent == nullptr) {
-    CreatePolyhedronComponent();
-  }
+  //if (PolyhedronComponent == nullptr) {
+  //  CreatePolyhedronComponent();
+  //} else {
+  //  GeneratePolyhedron();
+  //}
 }
 
 void APolyhedronConway::PostLoad() {
   Super::PostLoad();
 
-  if (PolyhedronComponent == nullptr) {
-    CreatePolyhedronComponent();
-  }
+  GeneratePolyhedron();
+  AttachMaterial();
 }
 
 #if WITH_EDITOR
@@ -42,22 +45,16 @@ void APolyhedronConway::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 
   // Regenerate the Polyhedron only if the user changes the local properties.
 	FProperty* Property = PropertyChangedEvent.MemberProperty;
-  if (Property != nullptr && Property->HasMetaData("Recreate")) {
-    if (PolyhedronComponent == nullptr) {
-      CreatePolyhedronComponent();
-    } else {
-      GeneratePolyhedron();
-    }
+  if (Property == nullptr) {
+    return;
+  }
+  if (Property->HasMetaData("Recreate")) {
+    GeneratePolyhedron();
+  } else if (Property->HasMetaData("AttachMaterial")) {
+    AttachMaterial();
   }
 }
 #endif
-
-void APolyhedronConway::CreatePolyhedronComponent() {
-  REPORT_ERROR_IF(PolyhedronComponent != nullptr, "PolyhedronComponent already exists");
-  PolyhedronComponent = NewObject<UPolyhedronComponent>(this, TEXT("PolyhedronComponent"), RF_Transient);
-  PolyhedronComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-  GeneratePolyhedron();
-}
 
 void APolyhedronConway::GeneratePolyhedron() {
   REPORT_ERROR_IF(PolyhedronComponent == nullptr, "Missing PolyhedronComponent");
@@ -66,4 +63,9 @@ void APolyhedronConway::GeneratePolyhedron() {
   FPolyhedronTools PolyhedronTools;
   Polyhedron = PolyhedronTools.GenerateFromConwayPolyhedronNotation(ConwayPolyhedronNotation, Scale);
   PolyhedronComponent->SetPolyhedronMesh(Polyhedron, bEnableCollision);
+}
+
+void APolyhedronConway::AttachMaterial() {
+  REPORT_ERROR_IF(PolyhedronComponent == nullptr, "Missing PolyhedronComponent");
+  PolyhedronComponent->SetMaterial(0, Material);
 }

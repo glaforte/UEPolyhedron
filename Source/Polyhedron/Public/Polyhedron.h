@@ -72,6 +72,8 @@ public: // Polyhedra Operations
   FPolyhedronMesh ExecuteDualOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ExecuteKisOperation(const FPolyhedronMesh& Input, int32 SideFilter = 0, double ApexOffset = 0.1) const;
   FPolyhedronMesh ExecuteTruncateOperation(const FPolyhedronMesh& Input) const;
+  FPolyhedronMesh ExecuteAmboOperation(const FPolyhedronMesh& Input) const;
+  FPolyhedronMesh ExecuteJoinOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ScaleToSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
   FPolyhedronMesh ProjectUntoSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
 
@@ -86,7 +88,7 @@ private: // Temporary Work Buffers.
   void AddWorkVertex(int64 VertexId, const FVector& Position) const;
   void AddWorkFlag(int64 FaceId, int64 VertexId1, int64 VertexId2) const;
   FPolyhedronMesh ConvertWorkBuffers() const;
-  mutable TArray<TPair<int64, FVector>> WorkVertexPositions;
-  mutable TArray<TPair<int64, int64>> WorkVertexIndices;
+  mutable TMap<int64, FVector> WorkVertexPositions;
+  mutable TMap<int64, int64> WorkVertexIndices;
   mutable TMap<int64, TMap<int64, int64>> WorkPolygonFlags;
 };

@@ -123,3 +123,42 @@ FPolyhedronMesh FPolyhedronStarter::CreatePrism(int32 Sides) {
 
   return Output;
 }
+
+FPolyhedronMesh FPolyhedronStarter::CreateTetrahedron() {
+  FPolyhedronMesh Output;
+  Output.Vertices.Reserve(4);
+  Output.Vertices.Add({ 1.0, 1.0, 1.0 });
+  Output.Vertices.Add({ 1.0, -1.0, -1.0 });
+  Output.Vertices.Add({ -1.0, 1.0, -1.0 });
+  Output.Vertices.Add({ -1.0, -1.0, 1.0 });
+
+  Output.Polygons.Reserve(4);
+  Output.Polygons.Add({0, 2, 1});
+  Output.Polygons.Add({0, 3, 2});
+  Output.Polygons.Add({0, 1, 3});
+  Output.Polygons.Add({1, 2, 3});
+  
+  return Output;
+}
+
+FPolyhedronMesh FPolyhedronStarter::CreateOctahedron() {
+  FPolyhedronMesh Output;
+  Output.Vertices.Reserve(6);
+  Output.Vertices.Add({ 0, 0, 1.414 });
+  Output.Vertices.Add({ 1.414, 0, 0 });
+  Output.Vertices.Add({ 0, 1.414, 0 });
+  Output.Vertices.Add({ -1.414, 0, 0 });
+  Output.Vertices.Add({ 0, -1.414, 0 });
+  Output.Vertices.Add({ 0, 0, -1.414 });
+
+  Output.Polygons.Reserve(8);
+  Output.Polygons.Add({0, 2, 1});
+  Output.Polygons.Add({0, 3, 2});
+  Output.Polygons.Add({0, 4, 3});
+  Output.Polygons.Add({0, 1, 4});
+  Output.Polygons.Add({1, 5, 4});
+  Output.Polygons.Add({1, 2, 5});
+  Output.Polygons.Add({2, 3, 5});
+  Output.Polygons.Add({3, 4, 5});
+  return Output;
+}

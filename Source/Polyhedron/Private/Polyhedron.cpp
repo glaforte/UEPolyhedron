@@ -42,10 +42,12 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
     // Start with a Polyhedron seed.
     if (!PolyhedronStarted) {
       switch (*NotationIterator) {
-        case 'I': Polyhedron = FPolyhedronStarter::CreateIcosahedron(); break;
-        case 'D': Polyhedron = FPolyhedronStarter::CreateDodecahedron(); break;
-        case 'P': Polyhedron = FPolyhedronStarter::CreatePrism(Argument); break;
-        default: REPORT_ERROR("Unknown Starter Volume: %c", *NotationIterator); return FPolyhedronMesh();
+      case 'I': Polyhedron = FPolyhedronStarter::CreateIcosahedron(); break;
+      case 'D': Polyhedron = FPolyhedronStarter::CreateDodecahedron(); break;
+      case 'O': Polyhedron = FPolyhedronStarter::CreateOctahedron(); break;
+      case 'P': Polyhedron = FPolyhedronStarter::CreatePrism(Argument); break;
+      case 'T': Polyhedron = FPolyhedronStarter::CreateTetrahedron(); break;
+      default: REPORT_ERROR("Unknown Starter Volume: %c", *NotationIterator); return FPolyhedronMesh();
       }
       PolyhedronStarted = true;
       Argument = 0;
@@ -54,10 +56,12 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
 
     // The subsequent letters are Conway operations to be done on the polyhedron.
     switch (*NotationIterator) {
-      case 'd': Polyhedron = ExecuteDualOperation(Polyhedron); break;
-      case 'k': Polyhedron = ExecuteKisOperation(Polyhedron, 0, 0.1); break;
-      case 't': Polyhedron = ExecuteTruncateOperation(Polyhedron); break;
-      default: REPORT_ERROR("Unknown Polyhedron Operation: %c", *NotationIterator); return FPolyhedronMesh();
+    case 'a': Polyhedron = ExecuteAmboOperation(Polyhedron); break;
+    case 'd': Polyhedron = ExecuteDualOperation(Polyhedron); break;
+    case 'j': Polyhedron = ExecuteJoinOperation(Polyhedron); break;
+    case 'k': Polyhedron = ExecuteKisOperation(Polyhedron, 0, 0.1); break;
+    case 't': Polyhedron = ExecuteTruncateOperation(Polyhedron); break;
+    default: REPORT_ERROR("Unknown Polyhedron Operation: %c", *NotationIterator); return FPolyhedronMesh();
     }
     Argument = 0;
   }
@@ -268,6 +272,53 @@ FPolyhedronMesh FPolyhedronTools::ExecuteTruncateOperation(const FPolyhedronMesh
   return ExecuteDualOperation(Polyhedron2);
 }
 
+FPolyhedronMesh FPolyhedronTools::ExecuteAmboOperation(const FPolyhedronMesh& Input) const {
+  // Ambo
+  // ------------------------------------------------------------------------------------------
+  // The best way to think of the ambo operator is as a topological "tween" between a polyhedron
+  // and its dual polyhedron.  Thus the ambo of a dual polyhedron is the same as the ambo of the
+  // original. Also called "Rectify".
+  //
+  ClearWorkBuffers();
+
+  int32 VertexCount = Input.Vertices.Num();
+  int32 DualPolygonOffset = Input.Polygons.Num();
+  auto CalculateMidId = [=] (int32 Vertex1, int32 Vertex2) -> int64 {
+    return Vertex1 < Vertex2 ? (static_cast<int64>(Vertex1) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex2)) : (static_cast<int64>(Vertex2) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex1));
+  };
+
+  // For each face f in the original poly
+  for (int32 PolygonIndex = 0; PolygonIndex < Input.Polygons.Num(); ++PolygonIndex) {
+    const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
+    int32 PolygonVertexCount = Polygon.VertexIndices.Num();
+    if (PolygonVertexCount < 3) continue;
+    int32 Vertex1 = Polygon.VertexIndices[PolygonVertexCount - 2];
+    int32 Vertex2 = Polygon.VertexIndices[PolygonVertexCount - 1];
+    for (int32 Vertex3 : Polygon.VertexIndices) {
+      if (Vertex1 < Vertex2) {
+        FVector MidPosition = (Input.Vertices[Vertex1] + Input.Vertices[Vertex2]) / 2.0;
+        AddWorkVertex(CalculateMidId(Vertex1, Vertex2), MidPosition);
+      }
+      // Add two new flags: one whose face corresponds to the original face
+      // and another face that corresponds to (the truncated) v2
+      AddWorkFlag(PolygonIndex, CalculateMidId(Vertex1, Vertex2), CalculateMidId(Vertex2, Vertex3));
+      AddWorkFlag(DualPolygonOffset + Vertex2, CalculateMidId(Vertex2, Vertex3), CalculateMidId(Vertex1, Vertex2));
+      // Shift over to the next edge pair.
+      Vertex1 = Vertex2;
+      Vertex2 = Vertex3;
+    }
+  }
+
+  return ConvertWorkBuffers();
+}
+
+FPolyhedronMesh FPolyhedronTools::ExecuteJoinOperation(const FPolyhedronMesh& Input) const {
+  // Join is a dual-ambo-dual combo.
+  FPolyhedronMesh Polyhedron1 = ExecuteDualOperation(Input);
+  FPolyhedronMesh Polyhedron2 = ExecuteAmboOperation(Polyhedron1);
+  return ExecuteDualOperation(Polyhedron2);
+}
+
 FPolyhedronMesh FPolyhedronTools::ScaleToSphere(const FPolyhedronMesh& Input, double Radius) const {
   // Compute the current spherical radius of the polyhedron.
   // Assume that all Polyhedron have the origin as their center.
@@ -393,11 +444,11 @@ void FPolyhedronTools::ClearWorkBuffers() const {
 }
 
 void FPolyhedronTools::AddWorkVertex(int64 VertexId, const FVector& Position) const {
-  for (int64 VertexIndex = WorkVertexIndices.Num(); VertexIndex <= VertexId; ++VertexIndex) {
-    WorkVertexIndices.Add(TPair<int64, int64>(VertexIndex, static_cast<int64>(0))); // Indexed at a later time?
-    WorkVertexPositions.Add(TPair<int64, FVector>(VertexIndex, Position));
+  if (!WorkVertexIndices.Contains(VertexId)) {
+    WorkVertexIndices.Add(VertexId, static_cast<int64>(0)); // Indexed at a later time?
+    WorkVertexPositions.Add(VertexId, Position);
   }
-  WorkVertexPositions[VertexId].Get<1>() = Position;
+  WorkVertexPositions[VertexId] = Position;
 }
 
 void FPolyhedronTools::AddWorkFlag(int64 FaceId, int64 VertexId1, int64 VertexId2) const {
@@ -426,7 +477,7 @@ FPolyhedronMesh FPolyhedronTools::ConvertWorkBuffers() const {
   // Number the vertices.
   for (TPair<int64, int64>& Iterator : WorkVertexIndices) {
     Iterator.Get<1>() = Output.Vertices.Num();
-    Output.Vertices.Add(WorkVertexPositions[Iterator.Get<0>()].Get<1>());
+    Output.Vertices.Add(WorkVertexPositions[Iterator.Get<0>()]);
   }
 
   // Build the faces from the poly-flags.
@@ -443,11 +494,11 @@ FPolyhedronMesh FPolyhedronTools::ConvertWorkBuffers() const {
 
     // Loop through the flags and record the vertex indices.
     int64 VertexIterator = Vertex0;
-    OutputPolygon.Add(WorkVertexIndices[VertexIterator].Get<1>());
+    OutputPolygon.Add(WorkVertexIndices[VertexIterator]);
     VertexIterator = Face[VertexIterator];
     for (int32 BackstopCounter = 0; BackstopCounter < 1000; ++BackstopCounter) {
       if (VertexIterator == Vertex0) break;
-      OutputPolygon.Add(WorkVertexIndices[VertexIterator].Get<1>());
+      OutputPolygon.Add(WorkVertexIndices[VertexIterator]);
       VertexIterator = Face[VertexIterator];
     }
 

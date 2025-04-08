@@ -18,6 +18,8 @@ struct POLYHEDRON_API FPolyhedronStarter {
 public: // Polyhedron Creation Functions
   static FPolyhedronMesh CreateIcosahedron();
   static FPolyhedronMesh CreateDodecahedron();
+  static FPolyhedronMesh CreateOctahedron();
   static FPolyhedronMesh CreatePrism(int32 Sides);
+  static FPolyhedronMesh CreateTetrahedron();
 };
 

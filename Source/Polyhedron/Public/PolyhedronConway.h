@@ -34,11 +34,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) FString ConwayPolyhedronNotation;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) float Scale = 100.0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) bool bEnableCollision = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (AttachMaterial)) TObjectPtr<UMaterialInterface> Material;
 private:
 	FPolyhedronMesh Polyhedron;
 
 protected: // Polyhedron Component
-	void CreatePolyhedronComponent();
 	void GeneratePolyhedron();
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Polyhedron") TObjectPtr<UPolyhedronComponent> PolyhedronComponent;
+	void AttachMaterial();
+protected:
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Polyhedron") TObjectPtr<UPolyhedronComponent> PolyhedronComponent;
 };

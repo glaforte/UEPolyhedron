@@ -18,10 +18,14 @@ This string is parsed from back to front.
 The following starter polyhedra are supported:
 * `I` [Icosahedron](https://en.wikipedia.org/wiki/Icosahedron)
 * `D` [Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)
+* `O` [Octahedron](https://en.wikipedia.org/wiki/Octahedron)
 * `P<n>` [Prism](https://en.wikipedia.org/wiki/Prism_(geometry)) where `<n>` is [3,9]. For example: `P3` makes a [Triangular Prism](https://en.wikipedia.org/wiki/Triangular_prism) and `P5` makes a [Pentagonal Prism](https://en.wikipedia.org/wiki/Pentagonal_prism).
+* `T` [Tetrahedron](https://en.wikipedia.org/wiki/Tetrahedron)
 
 The following operations are supported:
+* `a` Ambo
 * `d` Dual
+* `j` Join
 * `k` Kis or Triakis
 * `t` Truncate
 
