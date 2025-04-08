@@ -47,6 +47,28 @@ FPolyhedronMesh FPolyhedronStarter::CreateIcosahedron() {
   return Output;
 }
 
+FPolyhedronMesh FPolyhedronStarter::CreateOctahedron() {
+  FPolyhedronMesh Output;
+  Output.Vertices.Reserve(6);
+  Output.Vertices.Add({ 0, 0, 1.414 });
+  Output.Vertices.Add({ 1.414, 0, 0 });
+  Output.Vertices.Add({ 0, 1.414, 0 });
+  Output.Vertices.Add({ -1.414, 0, 0 });
+  Output.Vertices.Add({ 0, -1.414, 0 });
+  Output.Vertices.Add({ 0, 0, -1.414 });
+
+  Output.Polygons.Reserve(8);
+  Output.Polygons.Add({ 0, 2, 1 });
+  Output.Polygons.Add({ 0, 3, 2 });
+  Output.Polygons.Add({ 0, 4, 3 });
+  Output.Polygons.Add({ 0, 1, 4 });
+  Output.Polygons.Add({ 1, 5, 4 });
+  Output.Polygons.Add({ 1, 2, 5 });
+  Output.Polygons.Add({ 2, 3, 5 });
+  Output.Polygons.Add({ 3, 4, 5 });
+  return Output;
+}
+
 FPolyhedronMesh FPolyhedronStarter::CreateDodecahedron() {
   // Dodecahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
 
@@ -141,24 +163,24 @@ FPolyhedronMesh FPolyhedronStarter::CreateTetrahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::CreateOctahedron() {
+FPolyhedronMesh FPolyhedronStarter::CreateCube() {
   FPolyhedronMesh Output;
-  Output.Vertices.Reserve(6);
-  Output.Vertices.Add({ 0, 0, 1.414 });
-  Output.Vertices.Add({ 1.414, 0, 0 });
-  Output.Vertices.Add({ 0, 1.414, 0 });
-  Output.Vertices.Add({ -1.414, 0, 0 });
-  Output.Vertices.Add({ 0, -1.414, 0 });
-  Output.Vertices.Add({ 0, 0, -1.414 });
-
-  Output.Polygons.Reserve(8);
-  Output.Polygons.Add({0, 2, 1});
-  Output.Polygons.Add({0, 3, 2});
-  Output.Polygons.Add({0, 4, 3});
-  Output.Polygons.Add({0, 1, 4});
-  Output.Polygons.Add({1, 5, 4});
-  Output.Polygons.Add({1, 2, 5});
-  Output.Polygons.Add({2, 3, 5});
-  Output.Polygons.Add({3, 4, 5});
+  Output.Vertices.Reserve(8);
+  Output.Vertices.Add({ 0.707, 0.707, 0.707 });
+  Output.Vertices.Add({ -0.707, 0.707, 0.707 });
+  Output.Vertices.Add({ -0.707, -0.707, 0.707 });
+  Output.Vertices.Add({ 0.707, -0.707, 0.707 });
+  Output.Vertices.Add({ 0.707, -0.707, -0.707 });
+  Output.Vertices.Add({ 0.707, 0.707, -0.707 });
+  Output.Vertices.Add({ -0.707, 0.707, -0.707 });
+  Output.Vertices.Add({ -0.707, -0.707, -0.707 });
+  
+  Output.Polygons.Reserve(6);
+  Output.Polygons.Add({ 3, 2, 1, 0 });
+  Output.Polygons.Add({ 3, 0, 5, 4 });
+  Output.Polygons.Add({ 0, 1, 6, 5 });
+  Output.Polygons.Add({ 1, 2, 7, 6 });
+  Output.Polygons.Add({ 2, 3, 4, 7 });
+  Output.Polygons.Add({ 5, 6, 7, 4 });
   return Output;
 }

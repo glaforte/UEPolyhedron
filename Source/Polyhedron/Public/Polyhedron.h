@@ -74,6 +74,7 @@ public: // Polyhedra Operations
   FPolyhedronMesh ExecuteTruncateOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ExecuteAmboOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ExecuteJoinOperation(const FPolyhedronMesh& Input) const;
+  FPolyhedronMesh ExecuteGyroOperation(const FPolyhedronMesh& Input) const;
   FPolyhedronMesh ScaleToSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
   FPolyhedronMesh ProjectUntoSphere(const FPolyhedronMesh& Input, double Radius = 100.0) const;
 

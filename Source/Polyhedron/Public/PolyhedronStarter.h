@@ -21,5 +21,6 @@ public: // Polyhedron Creation Functions
   static FPolyhedronMesh CreateOctahedron();
   static FPolyhedronMesh CreatePrism(int32 Sides);
   static FPolyhedronMesh CreateTetrahedron();
+  static FPolyhedronMesh CreateCube();
 };
 

@@ -42,8 +42,9 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
     // Start with a Polyhedron seed.
     if (!PolyhedronStarted) {
       switch (*NotationIterator) {
-      case 'I': Polyhedron = FPolyhedronStarter::CreateIcosahedron(); break;
+      case 'C': Polyhedron = FPolyhedronStarter::CreateCube(); break;
       case 'D': Polyhedron = FPolyhedronStarter::CreateDodecahedron(); break;
+      case 'I': Polyhedron = FPolyhedronStarter::CreateIcosahedron(); break;
       case 'O': Polyhedron = FPolyhedronStarter::CreateOctahedron(); break;
       case 'P': Polyhedron = FPolyhedronStarter::CreatePrism(Argument); break;
       case 'T': Polyhedron = FPolyhedronStarter::CreateTetrahedron(); break;
@@ -58,6 +59,7 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
     switch (*NotationIterator) {
     case 'a': Polyhedron = ExecuteAmboOperation(Polyhedron); break;
     case 'd': Polyhedron = ExecuteDualOperation(Polyhedron); break;
+    case 'g': Polyhedron = ExecuteGyroOperation(Polyhedron); break;
     case 'j': Polyhedron = ExecuteJoinOperation(Polyhedron); break;
     case 'k': Polyhedron = ExecuteKisOperation(Polyhedron, 0, 0.1); break;
     case 't': Polyhedron = ExecuteTruncateOperation(Polyhedron); break;
@@ -303,7 +305,7 @@ FPolyhedronMesh FPolyhedronTools::ExecuteAmboOperation(const FPolyhedronMesh& In
       // and another face that corresponds to (the truncated) v2
       AddWorkFlag(PolygonIndex, CalculateMidId(Vertex1, Vertex2), CalculateMidId(Vertex2, Vertex3));
       AddWorkFlag(DualPolygonOffset + Vertex2, CalculateMidId(Vertex2, Vertex3), CalculateMidId(Vertex1, Vertex2));
-      // Shift over to the next edge pair.
+      // Advance to the next edge pair.
       Vertex1 = Vertex2;
       Vertex2 = Vertex3;
     }
@@ -317,6 +319,61 @@ FPolyhedronMesh FPolyhedronTools::ExecuteJoinOperation(const FPolyhedronMesh& In
   FPolyhedronMesh Polyhedron1 = ExecuteDualOperation(Input);
   FPolyhedronMesh Polyhedron2 = ExecuteAmboOperation(Polyhedron1);
   return ExecuteDualOperation(Polyhedron2);
+}
+
+FPolyhedronMesh FPolyhedronTools::ExecuteGyroOperation(const FPolyhedronMesh& Input) const {
+  // Gyro
+  // ----------------------------------------------------------------------------------------------
+  // This is the dual operator to "snub", i.e dual*Gyro = Snub.  It is a bit easier to implement
+  // this way.
+  //
+  // Snub creates at each vertex a new face, expands and twists it, and adds two new triangles to
+  // replace each edge.
+  //
+
+  ClearWorkBuffers();
+
+  // each old vertex is a new vertex
+  int32 InputVertexCount = Input.Vertices.Num();
+  for (int32 VertexIndex = 0; VertexIndex < InputVertexCount; ++VertexIndex) {
+    AddWorkVertex(VertexIndex, Input.Vertices[VertexIndex].GetUnsafeNormal());
+  }
+
+  // new vertices in center of each face
+  int32 CenterOffset = InputVertexCount;
+  TArray<FVector> Centers = GetPolygonCenters(Input);
+  int32 InputPolygonCount = Centers.Num();
+  for (int32 PolygonIndex = 0; PolygonIndex < InputPolygonCount; ++PolygonIndex) {
+    AddWorkVertex(CenterOffset + PolygonIndex, Centers[PolygonIndex].GetUnsafeNormal());
+  }
+
+  int32 GyroVertexOffset = CenterOffset + InputPolygonCount;
+  auto CalculateGyroVertexId = [=] (int32 Vertex1, int32 Vertex2) -> int64 {
+    return static_cast<int64>(GyroVertexOffset) + static_cast<int64>(Vertex1) * static_cast<int64>(InputVertexCount) + static_cast<int64>(Vertex2);
+  };
+
+  for (int32 PolygonIndex = 0; PolygonIndex < InputPolygonCount; ++PolygonIndex) {
+    const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
+    int32 PolygonVertexCount = Polygon.VertexIndices.Num();
+    if (PolygonVertexCount < 3) continue;
+    
+    int32 Vertex1 = Polygon.VertexIndices[PolygonVertexCount - 2];
+    int32 Vertex2 = Polygon.VertexIndices[PolygonVertexCount - 1];
+    for (int32 Vertex3 : Polygon.VertexIndices) {
+      int64 FaceId = static_cast<int64>(PolygonIndex) * static_cast<int64>(InputPolygonCount) + static_cast<int64>(Vertex1);
+      AddWorkVertex(CalculateGyroVertexId(Vertex1, Vertex2), FMath::Lerp(Input.Vertices[Vertex1], Input.Vertices[Vertex2], 1.0 / 3.0));
+      AddWorkFlag(FaceId, CenterOffset + PolygonIndex, CalculateGyroVertexId(Vertex1, Vertex2));
+      AddWorkFlag(FaceId, CalculateGyroVertexId(Vertex1, Vertex2), CalculateGyroVertexId(Vertex2, Vertex1));
+      AddWorkFlag(FaceId, CalculateGyroVertexId(Vertex2, Vertex1), Vertex2);
+      AddWorkFlag(FaceId, Vertex2, CalculateGyroVertexId(Vertex2, Vertex3));
+      AddWorkFlag(FaceId, CalculateGyroVertexId(Vertex2, Vertex3), CenterOffset + PolygonIndex);
+      
+      // Advance to the next edge pair.
+      Vertex1 = Vertex2;
+      Vertex2 = Vertex3;
+    }
+  }
+  return ConvertWorkBuffers();
 }
 
 FPolyhedronMesh FPolyhedronTools::ScaleToSphere(const FPolyhedronMesh& Input, double Radius) const {

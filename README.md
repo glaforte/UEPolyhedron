@@ -16,8 +16,9 @@ In the PolyhedronConway actor, you will need to write a notation string that inc
 This string is parsed from back to front.
 
 The following starter polyhedra are supported:
-* `I` [Icosahedron](https://en.wikipedia.org/wiki/Icosahedron)
+* `C` [Cube](https://en.wikipedia.org/wiki/Cube)
 * `D` [Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)
+* `I` [Icosahedron](https://en.wikipedia.org/wiki/Icosahedron)
 * `O` [Octahedron](https://en.wikipedia.org/wiki/Octahedron)
 * `P<n>` [Prism](https://en.wikipedia.org/wiki/Prism_(geometry)) where `<n>` is [3,9]. For example: `P3` makes a [Triangular Prism](https://en.wikipedia.org/wiki/Triangular_prism) and `P5` makes a [Pentagonal Prism](https://en.wikipedia.org/wiki/Pentagonal_prism).
 * `T` [Tetrahedron](https://en.wikipedia.org/wiki/Tetrahedron)
@@ -25,6 +26,7 @@ The following starter polyhedra are supported:
 The following operations are supported:
 * `a` Ambo
 * `d` Dual
+* `g` Gyro
 * `j` Join
 * `k` Kis or Triakis
 * `t` Truncate
@@ -32,9 +34,11 @@ The following operations are supported:
 I can add more starter polyhedra and operations on request.
 
 ### Example Conway Notations
-* `dI` makes a [Regular Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)
-* `tI` makes a Soccer ball / [Truncated Icosahedron](https://en.wikipedia.org/wiki/Truncated_icosahedron)
-* `tktI` makes a Golf ball.
+| **Conway Notation** | `dI` | `tI` | `tktI` |
+|----|----|----|----|
+|**Memo**|[Regular Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)| Soccer ball / [Truncated Icosahedron](https://en.wikipedia.org/wiki/Truncated_icosahedron)|Golf ball|
+|**Image**|![Regular Dodecahedron](./Resources/DualIcosahedron.png)|![Truncated Icosahedron](./Resources/TruncatedIcosahedron.png)|![TKT Icosahedron](./Resources/TKTIcosahedron.png)|
+
 
 ### Example Goldberg Polyhedron
 For more details on Goldberg Polyhedron and its notation: https://en.wikipedia.org/wiki/Goldberg_polyhedron.
