@@ -152,6 +152,54 @@ FPolyhedronMesh FPolyhedronOperations::Dual(const FPolyhedronMesh& Input) {
   return Output;
 }
 
+FPolyhedronMesh FPolyhedronOperations::Ambo(const FPolyhedronMesh& Input) {
+  // Ambo
+  // ------------------------------------------------------------------------------------------
+  // The best way to think of the ambo operator is as a topological "tween" between a polyhedron
+  // and its dual polyhedron.  Thus the ambo of a dual polyhedron is the same as the ambo of the
+  // original. Also called "Rectify".
+  //
+  FPolyhedronOperationFlagHelper PolyFlag;
+
+  int32 VertexCount = Input.Vertices.Num();
+  int32 DualPolygonOffset = Input.Polygons.Num();
+  auto CalculateMidId = [=] (int32 Vertex1, int32 Vertex2) -> int64 {
+    return Vertex1 < Vertex2 ? (static_cast<int64>(Vertex1) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex2)) : (static_cast<int64>(Vertex2) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex1));
+  };
+
+  // For each face f in the original poly
+  for (int32 PolygonIndex = 0; PolygonIndex < Input.Polygons.Num(); ++PolygonIndex) {
+    const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
+    int32 PolygonVertexCount = Polygon.VertexIndices.Num();
+    if (PolygonVertexCount < 3) continue;
+    int32 Vertex1 = Polygon.VertexIndices[PolygonVertexCount - 2];
+    int32 Vertex2 = Polygon.VertexIndices[PolygonVertexCount - 1];
+    for (int32 Vertex3 : Polygon.VertexIndices) {
+      if (Vertex1 < Vertex2) {
+        FVector MidPosition = (Input.Vertices[Vertex1] + Input.Vertices[Vertex2]) / 2.0;
+        PolyFlag.AddWorkVertex(CalculateMidId(Vertex1, Vertex2), MidPosition);
+      }
+      // Add two new flags: one whose face corresponds to the original face
+      // and another face that corresponds to (the truncated) v2
+      PolyFlag.AddWorkFlag(PolygonIndex, CalculateMidId(Vertex1, Vertex2), CalculateMidId(Vertex2, Vertex3));
+      PolyFlag.AddWorkFlag(DualPolygonOffset + Vertex2, CalculateMidId(Vertex2, Vertex3), CalculateMidId(Vertex1, Vertex2));
+      // Advance to the next edge pair.
+      Vertex1 = Vertex2;
+      Vertex2 = Vertex3;
+    }
+  }
+
+  return PolyFlag.ConvertWorkBuffers();
+}
+
+FPolyhedronMesh FPolyhedronOperations::Join(const FPolyhedronMesh& Input) {
+  // Leverage the Ambo operation in dual-space.
+  FPolyhedronMesh Polyhedron1 = Dual(Input);
+  FPolyhedronMesh Polyhedron2 = Ambo(Polyhedron1);
+  return Dual(Polyhedron2);
+}
+
+
 FPolyhedronMesh FPolyhedronOperations::Kis(const FPolyhedronMesh& Input, int32 SideFilter, double ApexOffset) {
   // Kis(N)
   // ------------------------------------------------------------------------------------------
@@ -214,57 +262,80 @@ FPolyhedronMesh FPolyhedronOperations::Kis(const FPolyhedronMesh& Input, int32 S
 }
 
 FPolyhedronMesh FPolyhedronOperations::Truncate(const FPolyhedronMesh& Input) {
-  // Truncate is a dual-kis-dual combo.
+  // Leverage the Kis operation in dual-space.
   FPolyhedronMesh Polyhedron1 = Dual(Input);
   FPolyhedronMesh Polyhedron2 = Kis(Polyhedron1, 0, 0.1);
   return Dual(Polyhedron2);
 }
 
-FPolyhedronMesh FPolyhedronOperations::Ambo(const FPolyhedronMesh& Input) {
-  // Ambo
-  // ------------------------------------------------------------------------------------------
-  // The best way to think of the ambo operator is as a topological "tween" between a polyhedron
-  // and its dual polyhedron.  Thus the ambo of a dual polyhedron is the same as the ambo of the
-  // original. Also called "Rectify".
+FPolyhedronMesh FPolyhedronOperations::Chamfer(const FPolyhedronMesh& Input, double Offset) {
+  // Chamfer
+  // ----------------------------------------------------------------------------------------
+  // A truncation along a polyhedron's edges.
+  // Chamfering or edge-truncation is similar to expansion, moving faces apart and outward,
+  // but also maintains the original vertices. Adds a new hexagonal face in place of each
+  // original edge.
+  // A polyhedron with e edges will have a chamfered form containing 2e new vertices,
+  // 3e new edges, and e new hexagonal faces. -- Wikipedia
+  // See also http://dmccooey.com/polyhedra/Chamfer.html
   //
+
   FPolyhedronOperationFlagHelper PolyFlag;
 
-  int32 VertexCount = Input.Vertices.Num();
-  int32 DualPolygonOffset = Input.Polygons.Num();
-  auto CalculateMidId = [=] (int32 Vertex1, int32 Vertex2) -> int64 {
-    return Vertex1 < Vertex2 ? (static_cast<int64>(Vertex1) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex2)) : (static_cast<int64>(Vertex2) * static_cast<int64>(VertexCount) + static_cast<int64>(Vertex1));
+  // For each face f in the original poly
+  int32 InputVertexCount = Input.Vertices.Num();
+  int32 InputPolygonCount = Input.Polygons.Num();
+
+  auto CalculateChamferedFaceId = [=] (int64 Vertex1, int64 Vertex2) -> int64 {
+    return static_cast<int64>(InputPolygonCount) + (
+      (Vertex1 < Vertex2) ?
+      (Vertex1 * static_cast<int64>(InputVertexCount) + Vertex2) :
+      (Vertex2 * static_cast<int64>(InputVertexCount) + Vertex1)
+    );
   };
 
-  // For each face f in the original poly
-  for (int32 PolygonIndex = 0; PolygonIndex < Input.Polygons.Num(); ++PolygonIndex) {
+  for (int32 PolygonIndex = 0; PolygonIndex < InputPolygonCount; ++PolygonIndex) {
     const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
-    int32 PolygonVertexCount = Polygon.VertexIndices.Num();
-    if (PolygonVertexCount < 3) continue;
-    int32 Vertex1 = Polygon.VertexIndices[PolygonVertexCount - 2];
-    int32 Vertex2 = Polygon.VertexIndices[PolygonVertexCount - 1];
-    for (int32 Vertex3 : Polygon.VertexIndices) {
-      if (Vertex1 < Vertex2) {
-        FVector MidPosition = (Input.Vertices[Vertex1] + Input.Vertices[Vertex2]) / 2.0;
-        PolyFlag.AddWorkVertex(CalculateMidId(Vertex1, Vertex2), MidPosition);
-      }
-      // Add two new flags: one whose face corresponds to the original face
-      // and another face that corresponds to (the truncated) v2
-      PolyFlag.AddWorkFlag(PolygonIndex, CalculateMidId(Vertex1, Vertex2), CalculateMidId(Vertex2, Vertex3));
-      PolyFlag.AddWorkFlag(DualPolygonOffset + Vertex2, CalculateMidId(Vertex2, Vertex3), CalculateMidId(Vertex1, Vertex2));
-      // Advance to the next edge pair.
+    if (Polygon.VertexIndices.Num() < 3) continue;
+
+    FVector PolygonNormal = FPolyhedronTools::GetPolygonNormal(Input, Polygon);
+
+    int32 Vertex1 = Polygon.VertexIndices.Last();
+    int32 Vertex1New = InputVertexCount + (PolygonIndex * InputVertexCount + Vertex1);
+
+    for (int32 Vertex2 : Polygon.VertexIndices) {
+      // Add the original vertex, scaled by the offset slightly (why?)
+      PolyFlag.AddWorkVertex(Vertex2, (1.0 + Offset) * Input.Vertices[Vertex2]); // will produce duplicates.
+      int32 Vertex2New = InputVertexCount + (PolygonIndex * InputVertexCount + Vertex2);
+      PolyFlag.AddWorkVertex(Vertex2New, Input.Vertices[Vertex2] + 1.5 * Offset * PolygonNormal); // magic!
+      
+      // One whose face corresponds to the original face:
+      PolyFlag.AddWorkFlag(PolygonIndex, Vertex1New, Vertex2New);
+      // And three for the edges of the new hexagon:
+      int64 ChamferedFaceId = CalculateChamferedFaceId(Vertex1, Vertex2);
+      PolyFlag.AddWorkFlag(ChamferedFaceId, Vertex2, Vertex2New);
+      PolyFlag.AddWorkFlag(ChamferedFaceId, Vertex2New, Vertex1New);
+      PolyFlag.AddWorkFlag(ChamferedFaceId, Vertex1New, Vertex1);
+
       Vertex1 = Vertex2;
-      Vertex2 = Vertex3;
+      Vertex1New = Vertex2New;
     }
   }
 
   return PolyFlag.ConvertWorkBuffers();
+};
+
+
+FPolyhedronMesh FPolyhedronOperations::Expand(const FPolyhedronMesh& Input) {
+  // Expand is a ambo-ambo combo.
+  FPolyhedronMesh Polyhedron1 = Ambo(Input);
+  return Ambo(Polyhedron1);
 }
 
-FPolyhedronMesh FPolyhedronOperations::Join(const FPolyhedronMesh& Input) {
-  // Join is a dual-ambo-dual combo.
-  FPolyhedronMesh Polyhedron1 = Dual(Input);
-  FPolyhedronMesh Polyhedron2 = Ambo(Polyhedron1);
-  return Dual(Polyhedron2);
+FPolyhedronMesh FPolyhedronOperations::Ortho(const FPolyhedronMesh& Input) {
+  // Ortho is a join-join combo.
+  FPolyhedronMesh Polyhedron1 = Join(Input);
+  return Join(Polyhedron1);
 }
 
 FPolyhedronMesh FPolyhedronOperations::Gyro(const FPolyhedronMesh& Input) {
@@ -320,3 +391,23 @@ FPolyhedronMesh FPolyhedronOperations::Gyro(const FPolyhedronMesh& Input) {
   }
   return PolyFlag.ConvertWorkBuffers();
 }
+
+FPolyhedronMesh FPolyhedronOperations::Snub(const FPolyhedronMesh& Input) {
+  // Leverage the Gyro operation in dual-space.
+  FPolyhedronMesh Polyhedron1 = Dual(Input);
+  FPolyhedronMesh Polyhedron2 = Gyro(Polyhedron1);
+  return Dual(Polyhedron2);
+}
+
+FPolyhedronMesh FPolyhedronOperations::Meta(const FPolyhedronMesh& Input) {
+  // Meta is a join-kis combo.
+  FPolyhedronMesh Polyhedron1 = Join(Input);
+  return Kis(Polyhedron1);
+}
+
+FPolyhedronMesh FPolyhedronOperations::Bevel(const FPolyhedronMesh& Input) {
+  // Bevel is a ambo-truncate combo.
+  FPolyhedronMesh Polyhedron1 = Ambo(Input);
+  return Truncate(Polyhedron1);
+}
+

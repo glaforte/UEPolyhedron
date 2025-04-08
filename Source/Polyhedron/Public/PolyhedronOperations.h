@@ -15,11 +15,27 @@ USTRUCT()
 struct POLYHEDRON_API FPolyhedronOperations {
   GENERATED_BODY()
 
-public: // Polyhedra Operations
+public: // Edge Factor 1
   static FPolyhedronMesh Dual(const FPolyhedronMesh& Input);
-  static FPolyhedronMesh Kis(const FPolyhedronMesh& Input, int32 SideFilter = 0, double ApexOffset = 0.1);
-  static FPolyhedronMesh Truncate(const FPolyhedronMesh& Input);
+
+public: // Edge Factor 2
   static FPolyhedronMesh Ambo(const FPolyhedronMesh& Input);
   static FPolyhedronMesh Join(const FPolyhedronMesh& Input);
+
+public: // Edge Factor 3
+  static FPolyhedronMesh Kis(const FPolyhedronMesh& Input, int32 SideFilter = 0, double ApexOffset = 0.1);
+  static FPolyhedronMesh Truncate(const FPolyhedronMesh& Input);
+
+public: // Edge Factor 4
+  static FPolyhedronMesh Chamfer(const FPolyhedronMesh& Input, double Offset = 0.1);
+  static FPolyhedronMesh Expand(const FPolyhedronMesh& Input);
+  static FPolyhedronMesh Ortho(const FPolyhedronMesh& Input);
+
+public: // Edge Factor 5
   static FPolyhedronMesh Gyro(const FPolyhedronMesh& Input);
+  static FPolyhedronMesh Snub(const FPolyhedronMesh& Input);
+
+public: // Edge Factor 6
+  static FPolyhedronMesh Meta(const FPolyhedronMesh& Input);
+  static FPolyhedronMesh Bevel(const FPolyhedronMesh& Input);
 };

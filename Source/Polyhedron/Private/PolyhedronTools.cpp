@@ -47,10 +47,16 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
     // The subsequent letters are Conway operations to be done on the polyhedron.
     switch (*NotationIterator) {
     case 'a': Polyhedron = FPolyhedronOperations::Ambo(Polyhedron); break;
+    case 'b': Polyhedron = FPolyhedronOperations::Bevel(Polyhedron); break;
+    case 'c': Polyhedron = FPolyhedronOperations::Chamfer(Polyhedron); break;
     case 'd': Polyhedron = FPolyhedronOperations::Dual(Polyhedron); break;
+    case 'e': Polyhedron = FPolyhedronOperations::Expand(Polyhedron); break;
     case 'g': Polyhedron = FPolyhedronOperations::Gyro(Polyhedron); break;
     case 'j': Polyhedron = FPolyhedronOperations::Join(Polyhedron); break;
     case 'k': Polyhedron = FPolyhedronOperations::Kis(Polyhedron, 0, 0.1); break;
+    case 'm': Polyhedron = FPolyhedronOperations::Meta(Polyhedron); break;
+    case 'o': Polyhedron = FPolyhedronOperations::Ortho(Polyhedron); break;
+    case 's': Polyhedron = FPolyhedronOperations::Snub(Polyhedron); break;
     case 't': Polyhedron = FPolyhedronOperations::Truncate(Polyhedron); break;
     default: REPORT_ERROR("Unknown Polyhedron Operation: %c", *NotationIterator); return FPolyhedronMesh();
     }

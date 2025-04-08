@@ -25,22 +25,28 @@ The following starter polyhedra are supported:
 
 The following operations are supported:
 * `a` Ambo
+* `b` Bevel
+* `c` Chamfer
 * `d` Dual
+* `e` Expand
 * `g` Gyro
 * `j` Join
 * `k` Kis or Triakis
+* `m` Meta
+* `o` Ortho
+* `s` Snub
 * `t` Truncate
 
 I can add more starter polyhedra and operations on request.
 
-### Example Conway Notations
-| **Conway Notation** | `dI` | `tI` | `tktI` |
-|----|----|----|----|
-|**Memo**|[Regular Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)| Soccer ball / [Truncated Icosahedron](https://en.wikipedia.org/wiki/Truncated_icosahedron)|Golf ball|
-|**Image**|![Regular Dodecahedron](./Resources/DualIcosahedron.png)|![Truncated Icosahedron](./Resources/TruncatedIcosahedron.png)|![TKT Icosahedron](./Resources/TKTIcosahedron.png)|
+#### Examples
 
+ | **Notation** |  `D` or `dI` | `tI` | `tktI` | `eC` |
+ |----|----|----|----|----|
+ | | ![Regular Dodecahedron](./Resources/DualIcosahedron.png) | ![Truncated Icosahedron](./Resources/TruncatedIcosahedron.png) | ![TKT Icosahedron](./Resources/TKTIcosahedron.png) | ![Expanded Cube](./Resources/ExpandedCube.png) | 
+ | | [Regular Dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron) |  Soccer ball / [Truncated Icosahedron](https://en.wikipedia.org/wiki/Truncated_icosahedron) | Golf ball | Expanded Cube | 
 
-### Example Goldberg Polyhedron
+### Goldberg Polyhedron
 For more details on Goldberg Polyhedron and its notation: https://en.wikipedia.org/wiki/Goldberg_polyhedron.
 * `dI` is GP(1,0).
 * `tI` is GP(1,1).
