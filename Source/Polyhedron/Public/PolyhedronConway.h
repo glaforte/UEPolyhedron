@@ -31,10 +31,11 @@ public: // Event-Handlers
 public: // Polyhedron Definition
 	const FPolyhedronMesh& GetPolyhedron() const { return Polyhedron; }
 protected: 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) FString ConwayPolyhedronNotation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) FString ConwayPolyhedronNotation = TEXT("I");
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) float Scale = 100.0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) bool bEnableCollision = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (AttachMaterial)) TObjectPtr<UMaterialInterface> Material;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Polyhedron", meta = (Recreate)) EPolyhedronUVGeneration UVGeneration = EPolyhedronUVGeneration::Spherical;
 private:
 	FPolyhedronMesh Polyhedron;
 

@@ -62,7 +62,7 @@ void APolyhedronConway::GeneratePolyhedron() {
 
   FPolyhedronTools PolyhedronTools;
   Polyhedron = PolyhedronTools.GenerateFromConwayPolyhedronNotation(ConwayPolyhedronNotation, Scale);
-  PolyhedronComponent->SetPolyhedronMesh(Polyhedron, bEnableCollision);
+  PolyhedronComponent->SetPolyhedronMesh(Polyhedron, bEnableCollision, UVGeneration);
 }
 
 void APolyhedronConway::AttachMaterial() {

@@ -20,5 +20,5 @@ public:
   UPolyhedronComponent(const FObjectInitializer& ObjectInitializer);
 
 public: // ProceduralMesh Generation
-  void SetPolyhedronMesh(const FPolyhedronMesh& PolyhedronMesh, bool bEnableCollision = false);
+  void SetPolyhedronMesh(const FPolyhedronMesh& PolyhedronMesh, bool bEnableCollision = false, EPolyhedronUVGeneration UVGeneration = EPolyhedronUVGeneration::Spherical);
 };
