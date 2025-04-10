@@ -6,21 +6,23 @@
 
 #include "CoreMinimal.h"
 #include "Polyhedron.h"
-#include "PolyhedronStarter.generated.h"
+#include "PolyhedronSeeds.generated.h"
 
 /*
 * Regroups the Polyhedron Starter creation functions.
 */
 USTRUCT()
-struct POLYHEDRON_API FPolyhedronStarter {
+struct POLYHEDRON_API FPolyhedronSeeds {
   GENERATED_BODY()
 
 public: // Polyhedron Creation Functions
-  static FPolyhedronMesh Icosahedron();
+  static FPolyhedronMesh Antiprism(int32 Sides);
+  static FPolyhedronMesh Cube();
   static FPolyhedronMesh Dodecahedron();
+  static FPolyhedronMesh Icosahedron();
   static FPolyhedronMesh Octahedron();
   static FPolyhedronMesh Prism(int32 Sides);
+  static FPolyhedronMesh Pyramid(int32 Sides);
   static FPolyhedronMesh Tetrahedron();
-  static FPolyhedronMesh Cube();
 };
 

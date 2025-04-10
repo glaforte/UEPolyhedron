@@ -3,7 +3,7 @@
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
 #include "PolyhedronTools.h"
-#include "PolyhedronStarter.h"
+#include "PolyhedronSeeds.h"
 #include "PolyhedronOperations.h"
 #include "Helpers.h"
 
@@ -24,19 +24,21 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
   for (; NotationIterator != NotationIteratorEnd; ++NotationIterator) {
     // Parse any integers as an argument for the subsequent function.
     if (*NotationIterator >= '0' && *NotationIterator <= '9') {
-      Argument = *NotationIterator - TEXT('0');
+      Argument = (Argument * 10) + (*NotationIterator - TEXT('0'));
       continue;
     }
 
     // Start with a Polyhedron seed.
     if (!PolyhedronStarted) {
       switch (*NotationIterator) {
-      case 'C': Polyhedron = FPolyhedronStarter::Cube(); break;
-      case 'D': Polyhedron = FPolyhedronStarter::Dodecahedron(); break;
-      case 'I': Polyhedron = FPolyhedronStarter::Icosahedron(); break;
-      case 'O': Polyhedron = FPolyhedronStarter::Octahedron(); break;
-      case 'P': Polyhedron = FPolyhedronStarter::Prism(Argument); break;
-      case 'T': Polyhedron = FPolyhedronStarter::Tetrahedron(); break;
+      case 'A': Polyhedron = FPolyhedronSeeds::Antiprism(Argument); break;
+      case 'C': Polyhedron = FPolyhedronSeeds::Cube(); break;
+      case 'D': Polyhedron = FPolyhedronSeeds::Dodecahedron(); break;
+      case 'I': Polyhedron = FPolyhedronSeeds::Icosahedron(); break;
+      case 'O': Polyhedron = FPolyhedronSeeds::Octahedron(); break;
+      case 'P': Polyhedron = FPolyhedronSeeds::Prism(Argument); break;
+      case 'T': Polyhedron = FPolyhedronSeeds::Tetrahedron(); break;
+      case 'Y': Polyhedron = FPolyhedronSeeds::Pyramid(Argument); break;
       default: REPORT_ERROR("Unknown Starter Volume: %c", *NotationIterator); return FPolyhedronMesh();
       }
       PolyhedronStarted = true;

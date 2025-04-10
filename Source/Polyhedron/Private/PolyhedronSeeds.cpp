@@ -2,9 +2,9 @@
 // Based on the Polyhedronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
-#include "PolyhedronStarter.h"
+#include "PolyhedronSeeds.h"
 
-FPolyhedronMesh FPolyhedronStarter::Icosahedron() {
+FPolyhedronMesh FPolyhedronSeeds::Icosahedron() {
   // Icosahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
 
   FPolyhedronMesh Output;
@@ -47,7 +47,7 @@ FPolyhedronMesh FPolyhedronStarter::Icosahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::Octahedron() {
+FPolyhedronMesh FPolyhedronSeeds::Octahedron() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(6);
   Output.Vertices.Add({ 0, 0, 1.414 });
@@ -69,7 +69,7 @@ FPolyhedronMesh FPolyhedronStarter::Octahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::Dodecahedron() {
+FPolyhedronMesh FPolyhedronSeeds::Dodecahedron() {
   // Dodecahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js
 
   FPolyhedronMesh Output;
@@ -112,9 +112,9 @@ FPolyhedronMesh FPolyhedronStarter::Dodecahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::Prism(int32 Sides) {
+FPolyhedronMesh FPolyhedronSeeds::Prism(int32 Sides) {
   if (Sides < 3) { 
-    REPORT_ERROR("Cannot  a prism with a degree < 3");
+    REPORT_ERROR("Cannot build a prism with a degree < 3");
     return FPolyhedronMesh();
   }
 
@@ -146,7 +146,82 @@ FPolyhedronMesh FPolyhedronStarter::Prism(int32 Sides) {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::Tetrahedron() {
+FPolyhedronMesh FPolyhedronSeeds::Antiprism(int32 Sides) {
+  if (Sides == 2) return Tetrahedron();
+  else if (Sides < 3) { 
+    REPORT_ERROR("Cannot build an anti-prism with a degree < 3");
+    return FPolyhedronMesh();
+  }
+
+  // Fits the Prism on a sphere.
+  const double Theta = (2.0 * UE_DOUBLE_PI) / static_cast<double>(Sides);
+  const double HalfHeight = FMath::Sin(Theta / 2.0);
+
+  FPolyhedronMesh Output;
+  Output.Vertices.SetNum(Sides * 2);
+  Output.Polygons.SetNum(2 * Sides + 2);
+
+  // Write the vertices.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    double BottomAngle = static_cast<double>(VertexIndex) * Theta;
+    double TopAngle = (static_cast<double>(VertexIndex) + 0.5) * Theta;
+    Output.Vertices[VertexIndex] = { -FMath::Cos(BottomAngle), -FMath::Sin(BottomAngle),  -HalfHeight };
+    Output.Vertices[Sides + VertexIndex] = { -FMath::Cos(TopAngle), -FMath::Sin(TopAngle),  HalfHeight };
+  }
+
+  // Write the side triangles.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    Output.Polygons[VertexIndex] = { VertexIndex, VertexIndex + Sides, (VertexIndex+1) % Sides };
+    Output.Polygons[Sides + VertexIndex] = { VertexIndex, (VertexIndex + Sides - 1) % Sides + Sides, VertexIndex + Sides };
+  }
+
+  // Write the end polygons.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    Output.Polygons[2 * Sides].VertexIndices.Add(VertexIndex);
+    Output.Polygons[2 * Sides + 1].VertexIndices.Add(2 * Sides - VertexIndex - 1); // Reverse Winding.
+  }
+
+  return Output;
+}
+
+FPolyhedronMesh FPolyhedronSeeds::Pyramid(int32 Sides) {
+  if (Sides < 3) { 
+    REPORT_ERROR("Cannot build an anti-prism with a degree < 3");
+    return FPolyhedronMesh();
+  }
+
+  // Fits the Prism on a sphere.
+  const double Theta = (2.0 * UE_DOUBLE_PI) / static_cast<double>(Sides);
+  const double HalfHeight = FMath::Sin(Theta / 2.0);
+
+  FPolyhedronMesh Output;
+  Output.Vertices.SetNum(Sides + 1);
+  Output.Polygons.SetNum(Sides + 1);
+
+  // Write the base vertices.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    double BottomAngle = static_cast<double>(VertexIndex) * Theta;
+    double TopAngle = (static_cast<double>(VertexIndex) + 0.5) * Theta;
+    Output.Vertices[VertexIndex] = { -FMath::Cos(BottomAngle), -FMath::Sin(BottomAngle), -HalfHeight };
+  }
+
+  // Write the apex.
+  Output.Vertices[Sides] = { 0.0, 0.0, 1.0 };
+
+  // Write the side triangles.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    Output.Polygons[VertexIndex] = { VertexIndex, Sides, (VertexIndex+1) % Sides };
+  }
+
+  // Write the base polygon.
+  for (int32 VertexIndex = 0; VertexIndex < Sides; ++VertexIndex) {
+    Output.Polygons[Sides].VertexIndices.Add(VertexIndex);
+  }
+
+  return Output;
+}
+
+FPolyhedronMesh FPolyhedronSeeds::Tetrahedron() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(4);
   Output.Vertices.Add({ 1.0, 1.0, 1.0 });
@@ -163,7 +238,7 @@ FPolyhedronMesh FPolyhedronStarter::Tetrahedron() {
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronStarter::Cube() {
+FPolyhedronMesh FPolyhedronSeeds::Cube() {
   FPolyhedronMesh Output;
   Output.Vertices.Reserve(8);
   Output.Vertices.Add({ 0.707, 0.707, 0.707 });
