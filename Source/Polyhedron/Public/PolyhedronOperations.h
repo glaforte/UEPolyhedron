@@ -24,6 +24,8 @@ public: // Edge Factor 2
 
 public: // Edge Factor 3
   static FPolyhedronMesh Kis(const FPolyhedronMesh& Input, int32 SideFilter = 0, double ApexOffset = 0.1);
+  static FPolyhedronMesh Needle(const FPolyhedronMesh& Input);
+  static FPolyhedronMesh Zip(const FPolyhedronMesh& Input);
   static FPolyhedronMesh Truncate(const FPolyhedronMesh& Input);
 
 public: // Edge Factor 4

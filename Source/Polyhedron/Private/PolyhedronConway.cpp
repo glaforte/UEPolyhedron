@@ -19,12 +19,6 @@ APolyhedronConway::APolyhedronConway()
 
 void APolyhedronConway::BeginPlay() {
   Super::BeginPlay();
-
-  //if (PolyhedronComponent == nullptr) {
-  //  CreatePolyhedronComponent();
-  //} else {
-  //  GeneratePolyhedron();
-  //}
 }
 
 void APolyhedronConway::PostLoad() {
@@ -63,6 +57,10 @@ void APolyhedronConway::GeneratePolyhedron() {
   FPolyhedronTools PolyhedronTools;
   Polyhedron = PolyhedronTools.GenerateFromConwayPolyhedronNotation(ConwayPolyhedronNotation, Scale);
   PolyhedronComponent->SetPolyhedronMesh(Polyhedron, bEnableCollision, UVGeneration);
+
+  // Record the statistics values exposed to Blueprint and the user.
+  VertexCount = Polyhedron.Vertices.Num();
+  PolygonCount = Polyhedron.Polygons.Num();
 }
 
 void APolyhedronConway::AttachMaterial() {

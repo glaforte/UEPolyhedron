@@ -57,6 +57,7 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
     case 'j': Polyhedron = FPolyhedronOperations::Join(Polyhedron); break;
     case 'k': Polyhedron = FPolyhedronOperations::Kis(Polyhedron, 0, 0.1); break;
     case 'm': Polyhedron = FPolyhedronOperations::Meta(Polyhedron); break;
+    case 'n': Polyhedron = FPolyhedronOperations::Needle(Polyhedron); break;
     case 'o': Polyhedron = FPolyhedronOperations::Ortho(Polyhedron); break;
     case 's': Polyhedron = FPolyhedronOperations::Snub(Polyhedron); break;
     case 't': Polyhedron = FPolyhedronOperations::Truncate(Polyhedron); break;

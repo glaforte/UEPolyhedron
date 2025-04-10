@@ -261,11 +261,75 @@ FPolyhedronMesh FPolyhedronOperations::Kis(const FPolyhedronMesh& Input, int32 S
   return Output;
 }
 
-FPolyhedronMesh FPolyhedronOperations::Truncate(const FPolyhedronMesh& Input) {
-  // Leverage the Kis operation in dual-space.
+FPolyhedronMesh FPolyhedronOperations::Needle(const FPolyhedronMesh& Input) {
+#if 1
+  // Leverage the Kis operation.
   FPolyhedronMesh Polyhedron1 = Dual(Input);
-  FPolyhedronMesh Polyhedron2 = Kis(Polyhedron1, 0, 0.1);
-  return Dual(Polyhedron2);
+  return Kis(Polyhedron1, 0, 0.1);
+#else
+  // Needle keeps the original vertices, add the polygon centers offset.
+  // Then, connect the centers with all the original vertices and connect the centers together.
+  // I believe the connection of center<->center is what's hard: you need to know the original polygon adjacency.
+
+  FPolyhedronOperationFlagHelper PolyFlag;
+
+  // Use the Polyhedron extended mesh to retrieve the polygon adjacency information.
+  FPolyhedronExtendedMesh ExtendedInput = FPolyhedronTools::ComputeEdgeDetails(Input);
+  int32 InputVertexCount = ExtendedInput.Vertices.Num();
+  int32 InputPolygonCount = ExtendedInput.Polygons.Num();
+  int32 ApexOffset = InputVertexCount;
+
+  // Copy the original vertices over to the flag structure.
+  for (int32 VertexIndex = 0; VertexIndex < InputVertexCount; ++VertexIndex) {
+    PolyFlag.AddWorkVertex(VertexIndex, ExtendedInput.Vertices[VertexIndex]);
+  }
+  // Calculate the polygon centers, offset them slightly and add them to the flag structure.
+  for (int32 PolygonIndex = 0; PolygonIndex < InputPolygonCount; ++PolygonIndex) {
+    FVector Apex = FPolyhedronTools::GetPolygonCenter(ExtendedInput, ExtendedInput.Polygons[PolygonIndex])
+      + 0.1 * FPolyhedronTools::GetPolygonNormal(ExtendedInput, ExtendedInput.Polygons[PolygonIndex]);
+    PolyFlag.AddWorkVertex(ApexOffset + PolygonIndex, Apex);
+  }
+
+  // Iterate over the extended edges to create the new polygons.
+  for (FPolyhedronDirectedHalfEdge& HalfEdge : ExtendedInput.Edges) {
+    // Process edges rather than half-edges.
+    if (HalfEdge.VertexIndexFrom > HalfEdge.VertexIndexTo) continue;
+
+    // Add a triangle that includes the edge's start Vertex and the two adjacent polygon centers, wind properly!
+    int32 PolygonId1 = PolyFlag.WorkPolygonFlags.Num();
+    PolyFlag.AddWorkFlag(PolygonId1, HalfEdge.VertexIndexFrom, ApexOffset + HalfEdge.PolygonIndexAcross);
+    PolyFlag.AddWorkFlag(PolygonId1, ApexOffset + HalfEdge.PolygonIndexAcross, ApexOffset + HalfEdge.PolygonIndex);
+    PolyFlag.AddWorkFlag(PolygonId1, ApexOffset + HalfEdge.PolygonIndex, HalfEdge.VertexIndexFrom);
+
+    // Add a triangle that includes the edge's end Vertex and the two adjacent polygon centers.
+    int32 PolygonId2 = PolyFlag.WorkPolygonFlags.Num();
+    PolyFlag.AddWorkFlag(PolygonId2, HalfEdge.VertexIndexTo, ApexOffset + HalfEdge.PolygonIndex);
+    PolyFlag.AddWorkFlag(PolygonId2, ApexOffset + HalfEdge.PolygonIndex, ApexOffset + HalfEdge.PolygonIndexAcross);
+    PolyFlag.AddWorkFlag(PolygonId2, ApexOffset + HalfEdge.PolygonIndexAcross, HalfEdge.VertexIndexTo);
+  }
+  
+  return PolyFlag.ConvertWorkBuffers();
+#endif
+}
+
+FPolyhedronMesh FPolyhedronOperations::Zip(const FPolyhedronMesh& Input) {
+  // Leverage the Kis operation.
+  FPolyhedronMesh Polyhedron1 = Kis(Input, 0, 0.1);
+  return Dual(Polyhedron1);
+}
+
+FPolyhedronMesh FPolyhedronOperations::Truncate(const FPolyhedronMesh& Input) {
+  // Leverage the Kis operation.
+  FPolyhedronMesh Polyhedron1 = Dual(Input);
+
+  // The Kis operation relies on normals which can get too small in the case of sub-divisions.
+  // Rescale the mesh to something larger.
+  FPolyhedronMesh PolyhedronS = FPolyhedronTools::ScaleToSphere(Polyhedron1, 1000.0);
+
+  FPolyhedronMesh Polyhedron2 = Kis(PolyhedronS, 0, 0.1);
+  FPolyhedronMesh Polyhedron3 = Dual(Polyhedron2);
+
+  return Polyhedron3;
 }
 
 FPolyhedronMesh FPolyhedronOperations::Chamfer(const FPolyhedronMesh& Input, double Offset) {

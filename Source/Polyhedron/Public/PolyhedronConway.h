@@ -44,4 +44,6 @@ protected: // Polyhedron Component
 	void AttachMaterial();
 protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Polyhedron") TObjectPtr<UPolyhedronComponent> PolyhedronComponent;
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Polyhedron") int32 VertexCount = 0;
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Polyhedron") int32 PolygonCount = 0;
 };

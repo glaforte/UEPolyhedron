@@ -36,9 +36,11 @@ The following operations are supported:
 * `j` Join
 * `k` Kis or Triakis
 * `m` Meta
+* `n` Needle
 * `o` Ortho
 * `s` Snub
 * `t` Truncate
+* `z` Zip
 
 I can add more starter polyhedra and operations on request.
 
