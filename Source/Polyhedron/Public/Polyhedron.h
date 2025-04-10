@@ -51,7 +51,16 @@ struct POLYHEDRON_API FPolyhedronExtendedMesh : public FPolyhedronMesh {
   GENERATED_BODY()
 
 public:
-  TArray<FPolyhedronDirectedHalfEdge> Edges;
+  // Used for finding edges faster and to generate more compact work buffers.
+  TArray<int32> PolygonHalfEdgeOffsets;
+  TArray<int32> VertexHalfEdgeOffsets;
+
+  // The half-edges are useful for adjacency details.
+  TArray<FPolyhedronDirectedHalfEdge> PolygonHalfEdges;
+  TArray<TPair<int32, int32>> VertexHalfEdgeIndices; // vertex2 index -> half-edge index, vertex1 comes from the cumulative counts.
+
+public: // Helpers
+  FPolyhedronDirectedHalfEdge* FindHalfEdge(int32 Vertex1, int32 Vertex2);
 };
 
 UENUM(BlueprintType)

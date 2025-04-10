@@ -72,7 +72,7 @@ FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FSt
 
 FVector FPolyhedronTools::CalculateNormal(const FVector& Position1, const FVector& Position2, const FVector& Position3) {
   FVector Normal = FVector::CrossProduct(Position3 - Position1, Position2 - Position1);
-  Normal.Normalize();
+  Normal.Normalize(1e-12); // UE_SMALL_NUMBER is 1e-8f, try smaller since we are using doubles.
   return Normal;
 }
 
@@ -178,47 +178,89 @@ FPolyhedronExtendedMesh FPolyhedronTools::ComputeEdgeDetails(const FPolyhedronMe
   // Copy the vertices and polygons.
   Output.Vertices = Input.Vertices;
   Output.Polygons = Input.Polygons;
+  int32 VertexTotal = Output.Vertices.Num();
+  if (VertexTotal < 1) return Output; // Empty mesh.
+  int32 PolygonTotal = Output.Polygons.Num();
+  if (PolygonTotal < 1) return Output; // Empty mesh.
 
-  // Count the edges and allocate the edge list.
-  int32 VertexTotal = Input.Vertices.Num();
-  int32 EdgeTotal = 0;
-  for (int32 PolygonIndex = 0; PolygonIndex < Input.Polygons.Num(); ++PolygonIndex) {
+  // Count the number of edges per vertex and per polygons, then cumulate them.
+  int32 PolygonHalfEdgeTotal = 0;
+  Output.VertexHalfEdgeOffsets.SetNumZeroed(VertexTotal + 1);
+  Output.PolygonHalfEdgeOffsets.SetNum(PolygonTotal + 1);
+  for (int32 PolygonIndex = 0; PolygonIndex < PolygonTotal; ++PolygonIndex) {
     const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
-    EdgeTotal += Polygon.VertexIndices.Num();
+    for (int32 VertexIndex : Polygon.VertexIndices) {
+      ++Output.VertexHalfEdgeOffsets[VertexIndex];
+    }
+    Output.PolygonHalfEdgeOffsets[PolygonIndex] = PolygonHalfEdgeTotal;
+    PolygonHalfEdgeTotal += Polygon.VertexIndices.Num();
   }
-  Output.Edges.Reserve(EdgeTotal);
+  Output.PolygonHalfEdgeOffsets[PolygonTotal] = PolygonHalfEdgeTotal;
+  int32 VertexHalfEdgeTotal = 0;
+  for (int32 VertexIndex = 0; VertexIndex < VertexTotal; ++VertexIndex) {
+    int32 VertexHalfEdgeOffset = VertexHalfEdgeTotal;
+    VertexHalfEdgeTotal += Output.VertexHalfEdgeOffsets[VertexIndex];
+    Output.VertexHalfEdgeOffsets[VertexIndex] = VertexHalfEdgeOffset;
+  }
+  Output.VertexHalfEdgeOffsets[VertexTotal] = VertexHalfEdgeTotal;
 
-  // Process the polygon, record edges.
-  TArray<TArray<TPair<int32, int32>>> EdgeWorkBuffer;
-  EdgeWorkBuffer.SetNum(VertexTotal);
-  for (int32 PolygonIndex = 0; PolygonIndex < Input.Polygons.Num(); ++PolygonIndex) {
+  // This is the same information, counted with two different methods.
+  check(PolygonHalfEdgeTotal == VertexHalfEdgeTotal);
+  int32 HalfEdgeTotal = PolygonHalfEdgeTotal;
+
+  // Allocate the edge list and the per-vertex edge map.
+  Output.VertexHalfEdgeIndices.SetNum(HalfEdgeTotal);
+  Output.PolygonHalfEdges.SetNum(HalfEdgeTotal);
+
+  // Unfortunately, we have to manually initialize the vertex half-edge map to "non-initialized".
+  for (int32 HalfEdgeIndex = 0; HalfEdgeIndex < HalfEdgeTotal; ++HalfEdgeIndex) {
+    Output.VertexHalfEdgeIndices[HalfEdgeIndex].Get<0>() = -1;
+  }
+
+  // Process the polygons, record half-edges in both per-vertex and per-polygon maps.
+  int32 PolygonHalfEdgeIndex = 0;
+  for (int32 PolygonIndex = 0; PolygonIndex < PolygonTotal; ++PolygonIndex) {
     const FPolyhedronPolygon& Polygon = Input.Polygons[PolygonIndex];
 
     int32 Vertex1 = Polygon.VertexIndices.Last(); // Start with the last vertex.
-    for (int32 VertexIndex : Polygon.VertexIndices) {
-      int32 Vertex2 = VertexIndex;
+    for (int32 PolygonEdgeIndex = 0; PolygonEdgeIndex < Polygon.VertexIndices.Num(); ++PolygonEdgeIndex) {
+      int32 Vertex2 = Polygon.VertexIndices[PolygonEdgeIndex];
 
-      FPolyhedronDirectedHalfEdge HalfEdge;
+      int32 HalfEdgeIndex = PolygonHalfEdgeIndex++;
+      FPolyhedronDirectedHalfEdge& HalfEdge = Output.PolygonHalfEdges[HalfEdgeIndex];
       HalfEdge.PolygonIndex = PolygonIndex;
+      HalfEdge.PolygonIndexAcross = -1;
       HalfEdge.VertexIndexFrom = Vertex1;
       HalfEdge.VertexIndexTo = Vertex2;
-      Output.Edges.Add(HalfEdge);
 
-      EdgeWorkBuffer[HalfEdge.VertexIndexFrom].Add(TPair<int32, int32>(HalfEdge.VertexIndexTo, PolygonIndex));
-      Vertex1 = Vertex2;
-    }
-  }
-
-  // Process the edges and find adjacent polygons.
-  for (FPolyhedronDirectedHalfEdge& HalfEdge : Output.Edges) {
-
-    // Look through the edge work area for the reverse edge and its polygon index.
-    HalfEdge.PolygonIndexAcross = -1;
-    for (const TPair<int32, int32>& EdgesAroundVertex : EdgeWorkBuffer[HalfEdge.VertexIndexTo]) {
-      if (EdgesAroundVertex.Get<0>() == HalfEdge.VertexIndexFrom) {
-        HalfEdge.PolygonIndexAcross = EdgesAroundVertex.Get<1>();
-        break;
+      // Record this half-edge index in the per-vertex map as well.
+      bool bWrittenToVertexMap = false;
+      for (int32 VertexHalfEdgeOffset = Output.VertexHalfEdgeOffsets[Vertex1], VertexHalfEdgeOffsetNext = Output.VertexHalfEdgeOffsets[Vertex1 + 1]; VertexHalfEdgeOffset < VertexHalfEdgeOffsetNext; ++VertexHalfEdgeOffset) {
+        if (Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<0>() == -1) {
+          Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<0>() = Vertex2;
+          Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<1>() = HalfEdgeIndex;
+          bWrittenToVertexMap = true;
+          break;
+        }
       }
+      check (bWrittenToVertexMap); // your mesh is not manifold if this check triggers.
+
+      // Check if the reverse edge has been processed.
+      for (int32 VertexHalfEdgeOffset = Output.VertexHalfEdgeOffsets[Vertex2], VertexHalfEdgeOffsetNext = Output.VertexHalfEdgeOffsets[Vertex2 + 1]; VertexHalfEdgeOffset < VertexHalfEdgeOffsetNext; ++VertexHalfEdgeOffset) {
+        if (Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<0>() == Vertex1) {
+          int32 ReverseHalfEdgeIndex = Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<1>();
+          HalfEdge.PolygonIndexAcross = Output.PolygonHalfEdges[ReverseHalfEdgeIndex].PolygonIndex;
+          check(Output.PolygonHalfEdges[ReverseHalfEdgeIndex].PolygonIndexAcross == -1); // your mesh is not manifold if this check triggers.
+          Output.PolygonHalfEdges[ReverseHalfEdgeIndex].PolygonIndexAcross = HalfEdge.PolygonIndex;
+          break;
+        } else if (Output.VertexHalfEdgeIndices[VertexHalfEdgeOffset].Get<0>() == -1) {
+          // The reverse edge may be written at a later time; when it is processed: it will write the PolygonIndexAcross.
+          break;
+        }
+      }
+
+      // Advance to the next edge.
+      Vertex1 = Vertex2;
     }
   }
 

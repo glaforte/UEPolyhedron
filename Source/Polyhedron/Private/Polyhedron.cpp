@@ -15,3 +15,15 @@ FPolyhedronPolygon::FPolyhedronPolygon(const TArray<int32>& Indices)
 FPolyhedronPolygon::FPolyhedronPolygon(std::initializer_list<int32> InitList)
   : MaterialIndex(0)
   , VertexIndices(InitList) {}
+
+FPolyhedronDirectedHalfEdge* FPolyhedronExtendedMesh::FindHalfEdge(int32 Vertex1, int32 Vertex2) {
+  int32 Vertex1Iterator = VertexHalfEdgeOffsets[Vertex1];
+  int32 Vertex1IteratorEnd = VertexHalfEdgeOffsets[Vertex1 + 1];
+  for (; Vertex1Iterator < Vertex1IteratorEnd; ++Vertex1Iterator) {
+    if (VertexHalfEdgeIndices[Vertex1Iterator].Get<0>() == Vertex2) {
+      int32 HalfEdgeIndex = VertexHalfEdgeIndices[Vertex1Iterator].Get<1>();
+      return &PolygonHalfEdges[HalfEdgeIndex];
+    }
+  }
+  return nullptr;
+}

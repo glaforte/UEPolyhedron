@@ -94,46 +94,46 @@ FPolyhedronMesh FPolyhedronOperations::Dual(const FPolyhedronMesh& Input) {
   // The new vertex coordinates are convenient to set to the original face centroids.
   //
   FPolyhedronMesh Output;
-  int32 OutputVertexCount = Input.Polygons.Num(); // Input Polygon Count -> Output Vertex Count.
-  int32 OutputPolygonCount = Input.Vertices.Num(); // Input Vertex Count -> Output Polygon Count.
+  int32 InputPolygonCount = Input.Polygons.Num(), OutputVertexCount = InputPolygonCount; // Input Polygon Count -> Output Vertex Count.
+  int32 InputVertexCount = Input.Vertices.Num(), OutputPolygonCount = InputVertexCount; // Input Vertex Count -> Output Polygon Count.
   Output.Vertices.SetNum(OutputVertexCount);
   Output.Polygons.SetNum(OutputPolygonCount);
 
   // Compute the polygon centers: these become the vertices of the new mesh.
-  TArray<FVector> Centers = FPolyhedronTools::GetPolygonCenters(Input);
-  for (int32 CenterIndex = 0; CenterIndex < Centers.Num(); ++CenterIndex) {
-    Output.Vertices[CenterIndex] = Centers[CenterIndex];
+  for (int32 InputPolygonIndex = 0; InputPolygonIndex < InputPolygonCount; ++InputPolygonIndex) {
+    FVector PolygonCenter = FPolyhedronTools::GetPolygonCenter(Input, Input.Polygons[InputPolygonIndex]);
+    Output.Vertices[InputPolygonIndex] = PolygonCenter;
   }
 
   // Reverse the Extended Mesh' adjacency information to create Output edges.
-  TArray<TArray<TPair<int32, int32>>> OutputPolygonEdgeLists;
-  OutputPolygonEdgeLists.SetNum(OutputPolygonCount);
   FPolyhedronExtendedMesh ExtendedInput = FPolyhedronTools::ComputeEdgeDetails(Input);
-  for (const FPolyhedronDirectedHalfEdge& HalfEdge: ExtendedInput.Edges) {
-    // If this check hits, your mesh is not manifold.
-    check(HalfEdge.PolygonIndexAcross >= 0);
-    OutputPolygonEdgeLists[HalfEdge.VertexIndexFrom].Add(TPair<int32, int32>(HalfEdge.PolygonIndexAcross, HalfEdge.PolygonIndex));
-  }
+  int32 HalfEdgeCount = ExtendedInput.PolygonHalfEdges.Num();
 
   // Process the output edges into output polygons with preserved winding.
   for (int32 OutputPolygonIndex = 0; OutputPolygonIndex < OutputPolygonCount; ++OutputPolygonIndex) {
-    const TArray<TPair<int32, int32>>& OutputPolygonEdgeList = OutputPolygonEdgeLists[OutputPolygonIndex];
-    int32 OutputPolygonVertexCount = OutputPolygonEdgeList.Num();
+    int32 InputVertexIndex = OutputPolygonIndex;
+    int32 VertexIteratorStart = ExtendedInput.VertexHalfEdgeOffsets[InputVertexIndex];
+    int32 VertexIteratorEnd = ExtendedInput.VertexHalfEdgeOffsets[InputVertexIndex + 1];
+    int32 InputVertexPolygonCount = VertexIteratorEnd - VertexIteratorStart;
+    int32 OutputPolygonVertexCount = InputVertexPolygonCount;
+
     Output.Polygons[OutputPolygonIndex].VertexIndices.Reserve(OutputPolygonVertexCount);
 
     // We can start with any of the half-edges.
-    int32 OutputVertex1 = OutputPolygonEdgeList[0].Get<0>();
-    int32 OutputVertex2 = OutputPolygonEdgeList[0].Get<1>();
+    FPolyhedronDirectedHalfEdge& FirstHalfEdge = ExtendedInput.PolygonHalfEdges[ExtendedInput.VertexHalfEdgeIndices[VertexIteratorStart].Get<1>()];
+    int32 OutputVertex1 = FirstHalfEdge.PolygonIndexAcross;
+    int32 OutputVertex2 = FirstHalfEdge.PolygonIndex;
     Output.Polygons[OutputPolygonIndex].VertexIndices.Add(OutputVertex1);
     Output.Polygons[OutputPolygonIndex].VertexIndices.Add(OutputVertex2);
 
     // Loop over the other half-edges, looking for the next vertex.
     bool bLoopCompleted = false;
-    for (int32 Iterator = 1; Iterator < OutputPolygonVertexCount; ++Iterator) {
+    for (int32 Iterator = VertexIteratorStart + 1; Iterator < VertexIteratorEnd; ++Iterator) {
       int32 NextVertexIndex = -1;
       for (int32 EdgeIndex = 1; EdgeIndex < OutputPolygonVertexCount; ++EdgeIndex) {
-        if (OutputPolygonEdgeList[EdgeIndex].Get<0>() == OutputVertex2) {
-          NextVertexIndex = OutputPolygonEdgeList[EdgeIndex].Get<1>();
+        FPolyhedronDirectedHalfEdge& HalfEdge = ExtendedInput.PolygonHalfEdges[ExtendedInput.VertexHalfEdgeIndices[VertexIteratorStart + EdgeIndex].Get<1>()];
+        if (HalfEdge.PolygonIndexAcross == OutputVertex2) {
+          NextVertexIndex = HalfEdge.PolygonIndex;
           break;
         }
       }
@@ -262,54 +262,9 @@ FPolyhedronMesh FPolyhedronOperations::Kis(const FPolyhedronMesh& Input, int32 S
 }
 
 FPolyhedronMesh FPolyhedronOperations::Needle(const FPolyhedronMesh& Input) {
-#if 1
   // Leverage the Kis operation.
   FPolyhedronMesh Polyhedron1 = Dual(Input);
   return Kis(Polyhedron1, 0, 0.1);
-#else
-  // Needle keeps the original vertices, add the polygon centers offset.
-  // Then, connect the centers with all the original vertices and connect the centers together.
-  // I believe the connection of center<->center is what's hard: you need to know the original polygon adjacency.
-
-  FPolyhedronOperationFlagHelper PolyFlag;
-
-  // Use the Polyhedron extended mesh to retrieve the polygon adjacency information.
-  FPolyhedronExtendedMesh ExtendedInput = FPolyhedronTools::ComputeEdgeDetails(Input);
-  int32 InputVertexCount = ExtendedInput.Vertices.Num();
-  int32 InputPolygonCount = ExtendedInput.Polygons.Num();
-  int32 ApexOffset = InputVertexCount;
-
-  // Copy the original vertices over to the flag structure.
-  for (int32 VertexIndex = 0; VertexIndex < InputVertexCount; ++VertexIndex) {
-    PolyFlag.AddWorkVertex(VertexIndex, ExtendedInput.Vertices[VertexIndex]);
-  }
-  // Calculate the polygon centers, offset them slightly and add them to the flag structure.
-  for (int32 PolygonIndex = 0; PolygonIndex < InputPolygonCount; ++PolygonIndex) {
-    FVector Apex = FPolyhedronTools::GetPolygonCenter(ExtendedInput, ExtendedInput.Polygons[PolygonIndex])
-      + 0.1 * FPolyhedronTools::GetPolygonNormal(ExtendedInput, ExtendedInput.Polygons[PolygonIndex]);
-    PolyFlag.AddWorkVertex(ApexOffset + PolygonIndex, Apex);
-  }
-
-  // Iterate over the extended edges to create the new polygons.
-  for (FPolyhedronDirectedHalfEdge& HalfEdge : ExtendedInput.Edges) {
-    // Process edges rather than half-edges.
-    if (HalfEdge.VertexIndexFrom > HalfEdge.VertexIndexTo) continue;
-
-    // Add a triangle that includes the edge's start Vertex and the two adjacent polygon centers, wind properly!
-    int32 PolygonId1 = PolyFlag.WorkPolygonFlags.Num();
-    PolyFlag.AddWorkFlag(PolygonId1, HalfEdge.VertexIndexFrom, ApexOffset + HalfEdge.PolygonIndexAcross);
-    PolyFlag.AddWorkFlag(PolygonId1, ApexOffset + HalfEdge.PolygonIndexAcross, ApexOffset + HalfEdge.PolygonIndex);
-    PolyFlag.AddWorkFlag(PolygonId1, ApexOffset + HalfEdge.PolygonIndex, HalfEdge.VertexIndexFrom);
-
-    // Add a triangle that includes the edge's end Vertex and the two adjacent polygon centers.
-    int32 PolygonId2 = PolyFlag.WorkPolygonFlags.Num();
-    PolyFlag.AddWorkFlag(PolygonId2, HalfEdge.VertexIndexTo, ApexOffset + HalfEdge.PolygonIndex);
-    PolyFlag.AddWorkFlag(PolygonId2, ApexOffset + HalfEdge.PolygonIndex, ApexOffset + HalfEdge.PolygonIndexAcross);
-    PolyFlag.AddWorkFlag(PolygonId2, ApexOffset + HalfEdge.PolygonIndexAcross, HalfEdge.VertexIndexTo);
-  }
-  
-  return PolyFlag.ConvertWorkBuffers();
-#endif
 }
 
 FPolyhedronMesh FPolyhedronOperations::Zip(const FPolyhedronMesh& Input) {
@@ -321,12 +276,7 @@ FPolyhedronMesh FPolyhedronOperations::Zip(const FPolyhedronMesh& Input) {
 FPolyhedronMesh FPolyhedronOperations::Truncate(const FPolyhedronMesh& Input) {
   // Leverage the Kis operation.
   FPolyhedronMesh Polyhedron1 = Dual(Input);
-
-  // The Kis operation relies on normals which can get too small in the case of sub-divisions.
-  // Rescale the mesh to something larger.
-  FPolyhedronMesh PolyhedronS = FPolyhedronTools::ScaleToSphere(Polyhedron1, 1000.0);
-
-  FPolyhedronMesh Polyhedron2 = Kis(PolyhedronS, 0, 0.1);
+  FPolyhedronMesh Polyhedron2 = Kis(Polyhedron1, 0, 0.1);
   FPolyhedronMesh Polyhedron3 = Dual(Polyhedron2);
 
   return Polyhedron3;
