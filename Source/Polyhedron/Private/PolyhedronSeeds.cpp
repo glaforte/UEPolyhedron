@@ -3,6 +3,7 @@
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
 #include "PolyhedronSeeds.h"
+#include "Helpers.h"
 
 FPolyhedronMesh FPolyhedronSeeds::Icosahedron() {
   // Icosahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js

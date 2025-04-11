@@ -21,6 +21,7 @@ public: // Polygon Operations
   static TArray<FVector> GetPolygonNormals(const FPolyhedronMesh& Input);
   static FVector GetPolygonCenter(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon);
   static FVector GetPolygonNormal(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon);
+  static FVector GetPolygonFirstNormal(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon);
 
 public: // Polyhedra Operations
   static FPolyhedronMesh ScaleToSphere(const FPolyhedronMesh& Input, double Radius = 100.0);

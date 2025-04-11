@@ -18,7 +18,7 @@ void POLYHEDRON_API ReportError(const char* FunctionName, const char* TextFormat
 #define REPORT_ERROR_RETURN_IF(CheckExpression, ReturnValue, TextFormat, ...) \
   if ((CheckExpression)) { ReportError(__FUNCTION__, TextFormat, ##__VA_ARGS__); return (ReturnValue); }
 
-#if WITH_AUTOMATION_TESTS && WITH_EDITORONLY_DATA
+#if defined(WITH_AUTOMATION_TESTS) && WITH_AUTOMATION_TESTS && defined(WITH_EDITORONLY_DATA) && WITH_EDITORONLY_DATA
 // Returns the first actor of a given type and name in the world.
 template <class ActorClassT> ActorClassT* FindActorInWorld(UWorld* World, const FName& ActorName) {
   for (TActorIterator<AActor> It(World); It; ++It) {

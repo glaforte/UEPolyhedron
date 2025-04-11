@@ -1,6 +1,7 @@
 // Copyright 2024 TabbyCoder
 
 #include "PolyhedronPolygonComponent.h"
+#include "PolyhedronTools.h"
 #include "Helpers.h"
 
 UPolyhedronPolygonComponent::UPolyhedronPolygonComponent(const FObjectInitializer& ObjectInitializer)

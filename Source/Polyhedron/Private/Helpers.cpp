@@ -1,6 +1,7 @@
 // Copyright 2024 TabbyCoder
 
 #include "Helpers.h"
+#include "Engine/Engine.h"
 
 void WriteOnScreen(const FString& Text) {
   #if UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT

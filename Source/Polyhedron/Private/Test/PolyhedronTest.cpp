@@ -1,13 +1,13 @@
 // Copyright 2024 TabbyCoder
 
+#if defined(WITH_AUTOMATION_TESTS) && WITH_AUTOMATION_TESTS && defined(WITH_EDITORONLY_DATA) && WITH_EDITORONLY_DATA
+
 #include "CQTest.h"
 #include "EngineUtils.h"
 #include "Helpers.h"
 #include "Polyhedron.h"
 #include "PolyhedronConway.h"
 #include "Components/MapTestSpawner.h"
-
-#if WITH_AUTOMATION_TESTS && WITH_EDITORONLY_DATA
 
 TEST_CLASS(PolyhedronTest, "Polyhedron") {
   TUniquePtr<FMapTestSpawner> Spawner;

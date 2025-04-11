@@ -1,6 +1,7 @@
 // Copyright 2024 TabbyCoder
 
 #include "PolyhedronComponent.h"
+#include "PolyhedronTools.h"
 #include "Helpers.h"
 
 namespace {
@@ -18,7 +19,7 @@ namespace {
     // Calculate phi or inclination or latitude
     double Phi = (Radius > 0.0f) ? FMath::Asin(Z / Radius) : 0.0f;
 
-    return FVector(Radius, 1.0 - (Theta + UE_DOUBLE_PI) / UE_DOUBLE_TWO_PI, 1.0 - (Phi + UE_DOUBLE_HALF_PI) / UE_DOUBLE_PI);
+    return FVector(Radius, Theta, Phi);
   }
 
   enum class EPolyhedronCubicFace : uint8 {
@@ -69,6 +70,18 @@ void UPolyhedronComponent::SetPolyhedronMesh(const FPolyhedronMesh& Polyhedron, 
     }
   }
 
+  // To optimize spherical mapping: we compute the spherical coordinates only once per vertex.
+  TArray<FVector2D> VertexSphericalCoordinates;
+  if (UVGeneration == EPolyhedronUVGeneration::Spherical) {
+    VertexSphericalCoordinates.Reserve(Polyhedron.Vertices.Num());
+    for (const FVector& VertexCartesian : Polyhedron.Vertices) {
+      FVector SphericalCoordinate = ConvertToSphericalCoordinates(VertexCartesian);
+      double U = 1.0 - (SphericalCoordinate.Y + UE_DOUBLE_PI) / UE_DOUBLE_TWO_PI;
+      double V = 1.0 - (SphericalCoordinate.Z + UE_DOUBLE_HALF_PI) / UE_DOUBLE_PI;
+      VertexSphericalCoordinates.Add({U, V});
+    }
+  }
+
   // Restart the Procedural Mesh.
   ClearAllMeshSections();
 
@@ -103,7 +116,7 @@ void UPolyhedronComponent::SetPolyhedronMesh(const FPolyhedronMesh& Polyhedron, 
       if (PolygonVertexCount < 3) continue;
 
       // Compute the vertex normal; this assumes planar polygons.
-      FVector PolygonNormal = FPolyhedronTools::GetPolygonNormal(Polyhedron, Polygon);
+      FVector PolygonNormal = FPolyhedronTools::GetPolygonFirstNormal(Polyhedron, Polygon);
 
       // Copy the vertex data into the final mesh arrays.
       int32 PolygonVertexOffset = MeshPositions.Num();
@@ -144,18 +157,18 @@ void UPolyhedronComponent::SetPolyhedronMesh(const FPolyhedronMesh& Polyhedron, 
         }
       } else if (UVGeneration == EPolyhedronUVGeneration::Spherical) {
         // To fix the wrapping problem, pin on the first vertex of the polygon.
-        FVector SphereProjectedPin = ConvertToSphericalCoordinates(Polyhedron.Vertices[Polygon.VertexIndices[0]]);
-        double PinU = SphereProjectedPin.Y, PinV = SphereProjectedPin.Z;
+        FVector2D SphereProjectedPin = VertexSphericalCoordinates[Polygon.VertexIndices[0]];
+        double PinU = SphereProjectedPin.X, PinV = SphereProjectedPin.Y;
         MeshUVs.Add(FVector2D(PinU, PinV));
 
         for (int32 PolygonVertexIndex = 1; PolygonVertexIndex < PolygonVertexCount; ++PolygonVertexIndex) {
           // Project each coordinate into spherical coordinates.
           int32 VertexIndex = Polygon.VertexIndices[PolygonVertexIndex];
-          FVector SphereProjectedVertex = ConvertToSphericalCoordinates(Polyhedron.Vertices[VertexIndex]);
-          double U = SphereProjectedVertex.Y;
+          FVector2D SphereProjectedVertex = VertexSphericalCoordinates[VertexIndex];
+          double U = SphereProjectedVertex.X;
           if (U - PinU < -0.5) U += 1.0;
           else if (U - PinU > 0.5) U -= 1.0;
-          double V = SphereProjectedVertex.Z;
+          double V = SphereProjectedVertex.Y;
           if (V - PinV < -0.5) V += 1.0;
           else if (V - PinV > 0.5) V -= 1.0;
 
@@ -181,7 +194,7 @@ void UPolyhedronComponent::SetPolyhedronMesh(const FPolyhedronMesh& Polyhedron, 
 
     REPORT_ERROR_IF(MeshPositions.Num() != UniqueVertexTotal, "Broken Algorithm -- Mismatched MeshPositions.Num()");
     REPORT_ERROR_IF(MeshNormals.Num() != UniqueVertexTotal, "Broken Algorithm -- Mismatched MeshNormals.Num()");
-    REPORT_ERROR_IF(MeshUVs.Num() != UniqueVertexTotal, "Broken Algorithm -- Mismatched MeshUVs.Num()");
+    REPORT_ERROR_IF(MeshUVs.Num() != 0 && MeshUVs.Num() != UniqueVertexTotal, "Broken Algorithm -- Mismatched MeshUVs.Num()");
     REPORT_ERROR_IF(MeshTriangles.Num() != 3 * TriangleTotal, "Broken Algorithm -- Mismatched MeshTriangles.Num()");
 
     CreateMeshSection_LinearColor(MaterialIndex, MeshPositions, MeshTriangles, MeshNormals, MeshUVs, TArray<FLinearColor>(), TArray<FProcMeshTangent>(), bEnableCollision, /*bSRGBConversion=*/false);

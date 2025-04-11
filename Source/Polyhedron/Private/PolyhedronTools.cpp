@@ -122,6 +122,16 @@ FVector FPolyhedronTools::GetPolygonCenter(const FPolyhedronMesh& Polyhedron, co
   return Center / Polygon.VertexIndices.Num();
 }
 
+FVector FPolyhedronTools::GetPolygonFirstNormal(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon) {
+  REPORT_ERROR_RETURN_IF(Polygon.VertexIndices.Num() < 3, FVector::ZeroVector, "No a complete polygon.");
+
+  // Fan-triangulate this polygon to process each triangle's normal.
+  FVector Vertex1 = Polyhedron.Vertices[Polygon.VertexIndices[0]];
+  FVector Vertex2 = Polyhedron.Vertices[Polygon.VertexIndices[1]];
+  FVector Vertex3 = Polyhedron.Vertices[Polygon.VertexIndices[2]];
+  return CalculateNormal(Vertex1, Vertex2, Vertex3);
+}
+
 FVector FPolyhedronTools::GetPolygonNormal(const FPolyhedronMesh& Polyhedron, const FPolyhedronPolygon& Polygon) {
   REPORT_ERROR_RETURN_IF(Polygon.VertexIndices.Num() < 3, FVector::ZeroVector, "No a complete polygon.");
 
@@ -135,6 +145,9 @@ FVector FPolyhedronTools::GetPolygonNormal(const FPolyhedronMesh& Polyhedron, co
 }
 
 FPolyhedronMesh FPolyhedronTools::ScaleToSphere(const FPolyhedronMesh& Input, double Radius) {
+  // Early exit to avoid crashing in FSphere.
+  if (Input.Vertices.Num() == 0) return FPolyhedronMesh();
+
   // Compute the current spherical radius of the polyhedron.
   // Assume that all Polyhedron have the origin as their center.
   double FurthestVertexDistanceSquared = 0.0;

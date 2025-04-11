@@ -6,6 +6,7 @@
 #include "PolyhedronConway.h"
 #include "Helpers.h"
 #include "Polyhedron.h"
+#include "PolyhedronTools.h"
 #include "PolyhedronComponent.h"
 
 APolyhedronConway::APolyhedronConway()
@@ -54,8 +55,7 @@ void APolyhedronConway::GeneratePolyhedron() {
   REPORT_ERROR_IF(PolyhedronComponent == nullptr, "Missing PolyhedronComponent");
   REPORT_ERROR_IF(ConwayPolyhedronNotation.Len() < 1, "Empty ConwayPolyhedronNotation makes no Polyhedron");
 
-  FPolyhedronTools PolyhedronTools;
-  Polyhedron = PolyhedronTools.GenerateFromConwayPolyhedronNotation(ConwayPolyhedronNotation, Scale);
+  Polyhedron = FPolyhedronTools::GenerateFromConwayPolyhedronNotation(ConwayPolyhedronNotation, Scale);
   PolyhedronComponent->SetPolyhedronMesh(Polyhedron, bEnableCollision, UVGeneration);
 
   // Record the statistics values exposed to Blueprint and the user.

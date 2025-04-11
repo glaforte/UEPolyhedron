@@ -15,9 +15,11 @@ public class Polyhedron : ModuleRules
 		// Procedural Mesh is the main UE interface for the Polyhedron.
 		PublicDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent" });
 
-		// Automated Testing
-		PrivateDependencyModuleNames.AddRange(new string[] { "AutomationTest", "CQTest" });
-
+		if (Target.Configuration != UnrealTargetConfiguration.Shipping) {
+			// Automated Testing
+			PrivateDependencyModuleNames.AddRange(new string[] { "AutomationTest", "CQTest" });
+		}
+		
 		// Available options that aren't used yet...
 		PublicIncludePaths.AddRange(new string[] {} );
 		PrivateIncludePaths.AddRange(new string[] {} );

@@ -55,6 +55,7 @@ FPolyhedronMesh FPolyhedronOperationFlagHelper::ConvertWorkBuffers() {
   }
 
   // Build the faces from the poly-flags.
+  Output.Polygons.Reserve(WorkPolygonFlags.Num());
   for (TPair<int64, TMap<int64, int64>>& Iterator : WorkPolygonFlags) {
     TArray<int32> OutputPolygon;
     TMap<int64, int64>& Face = Iterator.Get<1>();
