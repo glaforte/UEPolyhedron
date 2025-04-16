@@ -65,6 +65,9 @@ Three Texture Coordinate Generation functions are offered. Unreal will automatic
 * `Spherical` generates texture coordinates by applying a spherical projection. This generates texels of non-uniform sizes. This UV generation should be used to project one texture map unto the polyhedron. This has a known problem at the poles. This works well to build planets or asteroids.
 * `Cubic` generates texture coordinates by applying a cubic projection. This generates texels of non-uniform sizes and will show seams. This works well for props.
 
+# Disclaimer
+You will need to enable the official UE "ProceduralMeshComponent" plug-in before the Polyhedron plug-in can work.
+
 # References and Inspiration
 Based on the [Polyhédronisme](https://levskaya.github.io/polyhedronisme/) project.
 Copyright 2019, Anselm Levskaya.
@@ -75,4 +78,3 @@ Based on earlier work from [George W. Hart](http://www.georgehart.com/).
 # Screenshots
 Earth and Jupiter Textures applied to `tktI`
 ![Earth and Jupiter](./Resources/PlanetsScreenshot.jpg)
-

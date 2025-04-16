@@ -7,13 +7,18 @@
 	"Category": "Other",
 	"CreatedBy": "Tabby Coder",
 	"CreatedByURL": "http://tabbycoder.com",
-	"DocsURL": "",
+	"DocsURL": "https://github.com/glaforte/UEPolyhedron",
 	"MarketplaceURL": "",
-	"SupportURL": "",
+	"SupportURL": "https://github.com/glaforte/UEPolyhedron",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
+	
+	"EngineVersion": "5.5.0",
+	"PlatformAllowList": "Win64",
+	"FabURL": "com.epicgames.launcher://ue/Fab/product/3ab41821-60e3-4ac4-8502-f537727812a9",
+	
 	"Modules": [
 		{
 			"Name": "Polyhedron",
