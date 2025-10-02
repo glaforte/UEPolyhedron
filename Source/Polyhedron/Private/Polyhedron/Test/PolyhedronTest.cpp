@@ -4,9 +4,9 @@
 
 #include "CQTest.h"
 #include "EngineUtils.h"
-#include "Helpers.h"
-#include "Polyhedron.h"
-#include "PolyhedronConway.h"
+#include "Polyhedron/Helpers.h"
+#include "Polyhedron/Polyhedron.h"
+#include "Polyhedron/PolyhedronConway.h"
 #include "Components/MapTestSpawner.h"
 
 TEST_CLASS(PolyhedronTest, "Polyhedron") {

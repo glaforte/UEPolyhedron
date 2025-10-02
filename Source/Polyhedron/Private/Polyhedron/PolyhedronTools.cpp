@@ -2,10 +2,10 @@
 // Based on the Polyhedronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
-#include "PolyhedronTools.h"
-#include "PolyhedronSeeds.h"
-#include "PolyhedronOperations.h"
-#include "Helpers.h"
+#include "Polyhedron/PolyhedronTools.h"
+#include "Polyhedron/PolyhedronSeeds.h"
+#include "Polyhedron/PolyhedronOperations.h"
+#include "Polyhedron/Helpers.h"
 
 FPolyhedronMesh FPolyhedronTools::GenerateFromConwayPolyhedronNotation(const FString& ConwayPolyhedronNotation, float Scale) {
   REPORT_ERROR_RETURN_IF(ConwayPolyhedronNotation.Len() < 1, FPolyhedronMesh(), "Empty ConwayPolyhedronNotation makes no Polyhedron");

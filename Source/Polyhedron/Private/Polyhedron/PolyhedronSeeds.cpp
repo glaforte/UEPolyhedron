@@ -2,8 +2,8 @@
 // Based on the Polyhedronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
-#include "PolyhedronSeeds.h"
-#include "Helpers.h"
+#include "Polyhedron/PolyhedronSeeds.h"
+#include "Polyhedron/Helpers.h"
 
 FPolyhedronMesh FPolyhedronSeeds::Icosahedron() {
   // Icosahedron from https://github.com/levskaya/polyhedronisme/blob/master/polyhedron.js

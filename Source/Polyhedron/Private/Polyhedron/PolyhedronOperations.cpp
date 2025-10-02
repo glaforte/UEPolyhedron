@@ -2,8 +2,8 @@
 // Based on the Polyhedronisme project.  Released under the MIT License.  Copyright 2019, Anselm Levskaya.  https://levskaya.github.io/polyhedronisme/ | https://github.com/levskaya/polyhedronisme
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
-#include "PolyhedronOperations.h"
-#include "PolyhedronTools.h"
+#include "Polyhedron/PolyhedronOperations.h"
+#include "Polyhedron/PolyhedronTools.h"
 
 // This structure is intended to remain similar to the Polyhedronisme "poly_flag" structure.
 // It helps with porting the operation code. Some operations have been optimized to avoid this structure.

@@ -1,8 +1,8 @@
 // Copyright 2024 TabbyCoder
 
-#include "PolyhedronComponent.h"
-#include "PolyhedronTools.h"
-#include "Helpers.h"
+#include "Polyhedron/PolyhedronComponent.h"
+#include "Polyhedron/PolyhedronTools.h"
+#include "Polyhedron/Helpers.h"
 
 namespace {
   FVector ConvertToSphericalCoordinates(const FVector& CartesianPoint) {

@@ -3,11 +3,11 @@
 // Based on earlier work from George W. Hart.  http://www.georgehart.com/
 
 
-#include "PolyhedronConway.h"
-#include "Helpers.h"
-#include "Polyhedron.h"
-#include "PolyhedronTools.h"
-#include "PolyhedronComponent.h"
+#include "Polyhedron/PolyhedronConway.h"
+#include "Polyhedron/Helpers.h"
+#include "Polyhedron/Polyhedron.h"
+#include "Polyhedron/PolyhedronTools.h"
+#include "Polyhedron/PolyhedronComponent.h"
 
 APolyhedronConway::APolyhedronConway()
   : AActor() {

@@ -1,6 +1,6 @@
 // Copyright 2024 TabbyCoder
 
-#include "PolyhedronModule.h"
+#include "Polyhedron/PolyhedronModule.h"
 #include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE "FPolyhedronModule"

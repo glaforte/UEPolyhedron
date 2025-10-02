@@ -1,8 +1,8 @@
 // Copyright 2024 TabbyCoder
 
-#include "PolyhedronPolygonComponent.h"
-#include "PolyhedronTools.h"
-#include "Helpers.h"
+#include "Polyhedron/PolyhedronPolygonComponent.h"
+#include "Polyhedron/PolyhedronTools.h"
+#include "Polyhedron/Helpers.h"
 
 UPolyhedronPolygonComponent::UPolyhedronPolygonComponent(const FObjectInitializer& ObjectInitializer)
   : UProceduralMeshComponent(ObjectInitializer) {}
